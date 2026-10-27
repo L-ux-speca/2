@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 
 const dir=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const source=fs.readFileSync(path.join(dir,'index.html'),'utf8');
-let count=0;
+let count=0,spriteCount=0;
 const standalone=source
   .replace(/<link rel="stylesheet" href="([^"]+)">/g,(_,relative)=>
     `<style>\n${fs.readFileSync(path.join(dir,relative),'utf8')}\n</style>`)
@@ -18,8 +18,15 @@ const standalone=source
   count++;
   // Base64 changes the HTML encoding, NOT the underlying image bytes or quality.
   return `'data:${mime};base64,${contents.toString('base64')}'`;
+}).replace(/'(assets\/sprites\/([a-z]+)\/(idle|crouch)\.png)'/g,(_,relative)=>{
+  const absolute=path.join(dir,relative);
+  const contents=fs.readFileSync(absolute);
+  if(contents.length<5000)throw Error(`Unexpectedly small sprite: ${relative}`);
+  spriteCount++;
+  return `'data:image/png;base64,${contents.toString('base64')}'`;
 });
 if(count!==14)throw Error(`Expected 14 original portraits, found ${count}`);
-const out=path.resolve(dir,'..','Tokyo_Dawn_2_5_Standalone.html');
+if(spriteCount!==20)throw Error(`Expected 20 imported sprites, found ${spriteCount}`);
+const out=path.resolve(dir,'..','Tokyo_Dawn_2_7_Standalone.html');
 fs.writeFileSync(out,standalone);
-console.log(`${out} (${Math.round(Buffer.byteLength(standalone)/1024)} KiB, ${count} untouched portraits)`);
+console.log(`${out} (${Math.round(Buffer.byteLength(standalone)/1024)} KiB, ${count} untouched portraits, ${spriteCount} embedded sprites)`);

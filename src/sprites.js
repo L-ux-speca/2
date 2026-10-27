@@ -54,9 +54,10 @@ const SpriteSystem=(()=>{
   const draw=(ctx,f,time,scale=1)=>{
     const config=characters.get(f.c?.id);
     if(!config)return false;
-    const state=stateFor(f),animation=config.states[state];
+    const state=stateFor(f),animation=config.states[state]||config.states.idle;
     if(!animation)return false;
-    if(f._spriteState!==state){f._spriteState=state;f._spriteStart=time;}
+    const actualState=config.states[state]?state:'idle';
+    if(f._spriteState!==actualState){f._spriteState=actualState;f._spriteStart=time;}
     const frame=frameIndex(animation,time-(f._spriteStart??time));
     const img=load(animation.paths?animation.paths[frame]:animation.src);
     if(!img)return false;

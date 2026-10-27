@@ -57,6 +57,20 @@ for(const id of evalGame('CHARS.map(c=>c.id)')){
   const ext=id==='lapis'?'png':'jpg';
   assert.ok(fs.statSync(path.join(root,'assets','portraits',`${id}.${ext}`)).size>10000);
 }
+const spriteIds=['lapis','airi','chieko','dio','tori','araya','kayano',
+  'david','caesar','yuzuha'];
+for(const id of spriteIds){
+  assert.equal(evalGame(`SpriteSystem.get('${id}').displayHeight`),110);
+  for(const pose of ['idle','crouch']){
+    const entry=evalGame(`SpriteSystem.get('${id}').states.${pose}.paths[0]`);
+    assert.equal(entry,`assets/sprites/${id}/${pose}.png`);
+    const png=fs.readFileSync(path.join(root,entry));
+    assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    assert.equal(png.readUInt32BE(16),384,'Sprite canvas width');
+    assert.equal(png.readUInt32BE(20),576,'Sprite canvas height');
+    assert.equal(png[25],6,'Sprite PNG has RGBA transparency');
+  }
+}
 
 battle();
 evalGame("Input.held.add('KeyD')");
@@ -279,6 +293,8 @@ evalGame("SpriteSystem.register('testfighter',{displayHeight:100,states:{idle:{s
 evalGame("var spriteTestFighter={c:{id:'testfighter'},x:100,y:460,face:1,hp:100,st:{},stun:0,block:false,attack:null,pose:0,crouch:false,grounded:true,moving:false};SpriteSystem.draw(fakeDraw,spriteTestFighter,1,1)");
 evalGame('SpriteSystem.draw(fakeDraw,spriteTestFighter,1.6,1)');
 assert.equal(spriteFrame,80,'Animated sprites change frames without affecting fighter hitboxes');
+assert.ok(evalGame("SpriteSystem.draw(fakeDraw,{...spriteTestFighter,c:{id:'lapis'},moving:true},3,1)"),
+  'Unanimated movement retains the standing character artwork rather than reverting to the old model');
 
 // Four boss territories, three distinct genres and one unchanged naval RT.
 assert.equal(evalGame('RTBossCatalog.all().length'),4);
@@ -342,4 +358,84 @@ for(const boss of ['david','airi','sonic']){
   assert.ok(evalGame('Fight.g.rtUsed'),'The RT gauge can activate only once');
 }
 
-console.log('PASS: 14 original fighters and all moves, four RT bosses, David poison survival, Airi rhythm lanes/clones, Onsoku pursuit/jumping, encyclopedia and modular content');
+// Each new territory changes boss form, encounter timing, and move repertoire.
+const requiredMoves={
+  david:['reactor','ring','detonate','fork'],
+  airi:['flip','prism','burst'],
+  sonic:['echo','razor','dashcut','mirage']
+};
+for(const boss of Object.keys(requiredMoves)){
+  const forms=new Set();
+  for(const phase of [1,2,3]){
+    evalGame(`RTVariants.start('lapis','${boss}','hard',true);
+      RTVariants.g.state='active';RTVariants.g.phaseWait=0;`);
+    if(phase>=2)evalGame('RTVariants.phase(2);RTVariants.g.phaseWait=0');
+    if(phase===3)evalGame('RTVariants.phase(3);RTVariants.g.phaseWait=0');
+    forms.add(evalGame('RTVariants.g.formName'));
+    const t=evalGame('RTVariants.g.patternTimer');
+    assert.ok(t>0,`${boss} phase ${phase} has a valid attack interval`);
+  }
+  assert.equal(forms.size,3,`${boss} must have three distinct named forms`);
+  const used=new Set();
+  evalGame(`RTVariants.start('lapis','${boss}','hard',true);
+    RTVariants.g.state='active';RTVariants.g.phaseWait=0;
+    RTVariants.phase(2);RTVariants.g.phaseWait=0;
+    RTVariants.phase(3);RTVariants.g.phaseWait=0;`);
+  for(let i=0;i<15;i++){
+    evalGame('RTVariants.genre().pattern(RTVariants);RTVariants.g.patternCount++');
+    for(const type of evalGame('RTVariants.g.warnings.map(w=>w.type)'))used.add(type);
+    evalGame('RTVariants.g.warnings=[]');
+  }
+  for(const move of requiredMoves[boss])
+    assert.ok(used.has(move),`${boss} late phases include ${move}`);
+}
+
+// Timed attack series need a non-contradictory evasive answer on Airi.
+evalGame(`RTVariants.start('lapis','airi','hard',true);
+  RTVariants.g.state='active';RTVariants.g.phaseWait=0;
+  RTVariants.phase(2);RTVariants.g.phaseWait=0;
+  RTVariants.phase(3);RTVariants.g.phaseWait=0;
+  RTVariants.g.patternCount=0;RTVariants.genre().pattern(RTVariants)`);
+assert.equal(evalGame('new Set(RTVariants.g.warnings.filter(w=>w.type!=="clone").map(w=>w.safe)).size'),1,
+  'Lunatic Airi combo keeps one safe lane through its complete warning sequence');
+assert.ok(evalGame('RTVariants.g.patternTimer')>1.6,
+  'Lunatic Airi leaves enough telegraph time before changing the safe lane');
+evalGame(`RTVariants.start('lapis','sonic','hard',true);
+  RTVariants.g.state='active';RTVariants.g.phaseWait=0;
+  RTVariants.phase(2);RTVariants.g.phaseWait=0;
+  RTVariants.phase(3);RTVariants.g.phaseWait=0;
+  RTVariants.g.patternCount=1;RTVariants.genre().pattern(RTVariants)`);
+assert.ok(evalGame('RTVariants.g.patternTimer')>1.6,
+  'Lunatic Onsoku leaves a jump-to-crouch transition window');
+assert.ok(evalGame('RTVariants.g.warnings.length')>=2,
+  'Lunatic Onsoku uses warned sequential feints');
+for(const boss of ['david','airi','sonic']){
+  evalGame(`RTVariants.start('lapis','${boss}','hard',true);
+    RTVariants.g.state='active';RTVariants.g.phaseWait=0;
+    RTVariants.g.patternCount=2;RTVariants.genre().pattern(RTVariants)`);
+  assert.ok(evalGame('RTVariants.g.warnings.length')>=2,
+    `Lunatic ${boss} applies pressure already in phase I`);
+}
+
+// Araya keeps its original naval RT but adds a director exclusively on Lunatic.
+evalGame(`RT.start('lapis','easy',true);RT.g.state='active';RT.g.phaseWait=0;`);
+assert.equal(evalGame('RT.g.lunaticTimer'),undefined,'Easy Araya stays unchanged');
+evalGame(`RT.start('lapis','hard',true);RT.g.state='active';RT.g.phaseWait=0;`);
+assert.ok(evalGame('RT.g.lunaticTimer')>0,'Lunatic Araya starts the attack director');
+evalGame('RT.lunaticAttack()');
+assert.ok(evalGame('RT.g.warnings.length')>=2,'Lunatic Araya warns crossfire');
+evalGame('RT.phase(2)');
+assert.equal(evalGame('RT.g.targets.filter(t=>t.ship).length'),4,
+  'Lunatic Araya phase II adds a destructible hunter ship');
+evalGame('RT.g.phaseWait=0;RT.lunaticAttack()');
+assert.ok(evalGame('RT.g.warnings.length')>=3,
+  'Lunatic Araya phase II mixes fire from multiple ships');
+evalGame('RT.phase(3);RT.g.phaseWait=0;RT.lunaticAttack()');
+assert.ok(evalGame('RT.g.lunaticForm').includes('КОРАБЛЬ'),
+  'Araya phase III visibly changes into a final form');
+assert.ok(evalGame('RT.g.warnings.length')>=2,
+  'Lunatic Araya phase III has simultaneous, telegraphed hazards');
+
+assert.ok(allJs.includes('clean-home-menu')&&html.includes('interface-clean.css'),
+  'Compact home screen and uniform portrait framing are loaded');
+console.log('PASS: 14 fighters, 20 aligned sprites, 4 RT bosses with 3 forms, expanded phase attacks and Lunatic directors, compact home screen, encyclopedia and modular content');

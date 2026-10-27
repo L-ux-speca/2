@@ -22,6 +22,6 @@ function frame(ms){
 // Read-only diagnostics for local verification and save-file compatibility.
 window.TokyoDawn=window.Clash={App,Fight,RT,Builder,Net,CHARS,RULES,Input,Cheats,
   Hitbox,CombatHooks,CombatCollisions,CharacterCatalog,ArenaCatalog,SkillRegistry,
-  SpriteSystem,RTBossCatalog,RTVariants,RTHub,Encyclopedia,version:'2.5.0-multi-rt'};
+  SpriteSystem,RTBossCatalog,RTVariants,RTHub,Encyclopedia,version:'2.7.0-lunatic'};
 App.home();requestAnimationFrame(frame);
 

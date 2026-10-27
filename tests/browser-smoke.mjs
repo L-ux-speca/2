@@ -3,12 +3,16 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {createRequire} from 'node:module';
 
 // Optional real-browser smoke test. Requires Playwright + installed Chromium.
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 let chromium;
 try { ({chromium}=await import('playwright')); }
-catch { console.error('Install Playwright for browser tests: npm install -D playwright'); process.exit(2); }
+catch {
+  try {({chromium}=createRequire(import.meta.url)('playwright'));}
+  catch { console.error('Install Playwright for browser tests: npm install -D playwright'); process.exit(2); }
+}
 
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
   '.css':'text/css; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp'};
@@ -31,6 +35,26 @@ try{
   await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'load'});
   await page.locator('.home-grid').waitFor();
   assert.equal(await page.title(),'Tokyo Dawn — 2D-файтинг');
+  assert.equal(await page.locator('.clean-home-menu > .mode-btn').count(),3,
+    'Landing page now has only three primary mode choices');
+  assert.equal(await page.locator('.home-portrait-selector').count(),0,
+    'Landing page no longer loads a redundant fourteen-portrait strip');
+  await page.getByRole('button',{name:/Территории РТ/}).click();
+  await page.locator('#rtBoss').waitFor();
+  await page.locator('#rtBoss').selectOption('airi');
+  await page.locator('#rtDifficulty').selectOption('hard');
+  await page.getByRole('button',{name:/Начать испытание/}).click();
+  assert.equal(await page.evaluate(()=>window.TokyoDawn.RTVariants.g.formName),
+    'КУБИЧЕСКИЙ АВТОМАТ','Airi has a concrete first-stage form');
+  await page.evaluate(()=>{
+    const {RTVariants,App}=window.TokyoDawn;
+    RTVariants.g.state='active';RTVariants.g.phaseWait=0;
+    RTVariants.phase(2);RTVariants.g.phaseWait=0;
+    RTVariants.phase(3);RTVariants.g.phaseWait=0;
+    RTVariants.genre().pattern(RTVariants);
+    RTVariants.draw();App.home();
+  });
+  await page.locator('.home-grid').waitFor();
   await page.getByRole('button',{name:/Играть/}).first().click();
   await page.getByRole('button',{name:/Тренировка/}).click();
   await page.locator('.select-layout').waitFor();

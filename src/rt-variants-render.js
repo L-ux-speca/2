@@ -18,15 +18,20 @@ RTVariants.draw=function(){
     ctx.save();ctx.globalAlpha=.16+.13*Math.sin(g.t*25)**2;
     const color=g.info.accent;
     if(g.bossId==='david'){
-      if(w.type==='cloud'){
+      if(['cloud','reactor','detonate'].includes(w.type)){
         circle(ctx,w.x,w.y,w.r,'#a7f5a850');
         circle(ctx,w.x,w.y,w.r*(1-progress),'#d6f8b7',true,3);
+      }else if(w.type==='ring'){
+        circle(ctx,w.x,w.y,w.r,'#92e9a555',true,5);
+        line(ctx,w.x,w.y,w.x+Math.cos(w.angle)*230,
+          w.y+Math.sin(w.angle)*230,'#deffc6',4);
       }else if(w.type==='wall'){
+        const safeRadius=g.hard?47:57;
         ctx.fillStyle='#c1e18a77';
-        ctx.fillRect(0,120,960,Math.max(0,w.safe-52-120));
-        ctx.fillRect(0,w.safe+52,960,Math.max(0,548-w.safe-52));
-        line(ctx,0,w.safe-52,960,w.safe-52,'#dafab4',2);
-        line(ctx,0,w.safe+52,960,w.safe+52,'#dafab4',2);
+        ctx.fillRect(0,120,960,Math.max(0,w.safe-safeRadius-120));
+        ctx.fillRect(0,w.safe+safeRadius,960,Math.max(0,548-w.safe-safeRadius));
+        line(ctx,0,w.safe-safeRadius,960,w.safe-safeRadius,'#dafab4',2);
+        line(ctx,0,w.safe+safeRadius,960,w.safe+safeRadius,'#dafab4',2);
       }else{
         const a=w.angle;
         ctx.fillStyle='#9cfa9e77';ctx.beginPath();ctx.moveTo(w.x,w.y);
@@ -45,7 +50,7 @@ RTVariants.draw=function(){
       const y=w.y||462;
       ctx.fillStyle='#f2a8aa66';ctx.fillRect(100,y-w.r-6,860,w.r*2+12);
       line(ctx,100,y-w.r-6,960,y-w.r-6,'#ffd4bd',2);
-      canvasText(ctx,w.type==='shuriken'?'ПРИГНИСЬ':'ПРЫГНИ',770,y-44,14,'#fff1df');
+      canvasText(ctx,['shuriken','razor','mirage'].includes(w.type)?'ПРИГНИСЬ':'ПРЫГНИ',770,y-44,14,'#fff1df');
     }
     ctx.restore();
   }
@@ -62,6 +67,7 @@ RTVariants.draw=function(){
     stun:0,st:{},grounded:true,moving:false,attack:null,pose:0,block:false,crouch:false};
   ctx.save();glow(ctx,g.enemy.color,8);
   drawFighter(ctx,enemy,g.t,.73);ctx.restore();
+  this.genre().drawBoss?.(this,ctx);
   circle(ctx,g.bossX,g.bossY,49,g.enemy.color+'45',true,2);
   if(g.phase===3){
     circle(ctx,g.bossX,g.bossY,57+Math.sin(g.t*6)*4,g.enemy.color+'55',true,2);
@@ -72,7 +78,7 @@ RTVariants.draw=function(){
   }
   for(const b of g.bullets){
     if(b.shape==='spike'){
-      ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.PI/2);
+      ctx.save();ctx.translate(b.x,b.y);ctx.rotate(-Math.PI/2);
       poly(ctx,[[0,-18],[15,14],[-15,14]],b.color);ctx.restore();
     }else if(b.shape==='cube'){
       ctx.save();ctx.translate(b.x,b.y);ctx.rotate(g.t*1.8);

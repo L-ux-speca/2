@@ -1,0 +1,40 @@
+/* Focused landing screen and uniformly framed portrait thumbnails. */
+.home-portrait-selector{display:none}
+.home-grid{min-height:530px;gap:24px;grid-template-columns:minmax(0,1fr) 310px}
+.home-grid .hero{min-height:530px}
+.clean-home-menu{padding:18px 0 0;gap:0}
+.clean-home-menu .home-menu-heading{margin-bottom:20px}
+.clean-home-menu .home-menu-heading h2{font-size:26px;margin:6px 0 3px}
+.clean-home-menu .home-menu-heading p{color:var(--muted);font-size:12px}
+.clean-home-menu .mode-btn{margin-bottom:10px;padding:15px 17px}
+.clean-home-menu .mode-btn b{font-size:15px}
+.clean-home-menu .home-utilities{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:19px}
+.clean-home-menu .home-utilities button{padding:10px 7px;font-size:12px}
+.clean-home-menu .home-help{background:none;border:0;padding:11px 4px;color:var(--muted);font-size:11px;text-align:left}
+.clean-home-menu .home-help:hover{color:var(--cyan)}
+.home-grid .hero-featured-portrait{width:55%;height:88%;right:3%}
+.roster .char-card{display:flex;flex-direction:column;min-height:175px}
+.roster .char-card .fighter-portrait{height:125px;min-height:125px;flex:0 0 125px;width:100%;border-radius:0}
+.roster .char-card .portrait-original{width:100%;height:100%;object-fit:cover;object-position:center 22%}
+.roster .char-card .cc-copy{min-height:50px;display:flex;flex-direction:column;justify-content:center}
+.fighter-info .portrait-original{object-fit:cover;object-position:center 23%}
+.encyclopedia-card .fighter-portrait{height:103px;min-height:103px}
+.encyclopedia-card .portrait-original{object-fit:cover;object-position:center 20%}
+.encyclopedia-portrait .fighter-portrait{height:100%;min-height:100%}
+.encyclopedia-portrait .portrait-original{object-fit:cover;object-position:center 18%}
+@media(max-width:1100px){
+  .home-grid{grid-template-columns:minmax(0,1fr) 280px}
+  .roster .char-card .fighter-portrait{height:118px;min-height:118px;flex-basis:118px}
+}
+@media(max-width:760px){
+  .home-grid{grid-template-columns:1fr;min-height:0;gap:14px}
+  .home-grid .hero{min-height:345px}
+  .home-grid .hero h1{font-size:50px}
+  .home-grid .hero-featured-portrait{height:95%;width:56%}
+  .clean-home-menu{padding:0}
+  .clean-home-menu .home-menu-heading{margin-bottom:12px}
+  .clean-home-menu .mode-btn{padding:12px 14px}
+  .clean-home-menu .home-utilities{margin-top:6px}
+  .roster .char-card{min-height:150px}
+  .roster .char-card .fighter-portrait{height:102px;min-height:102px;flex-basis:102px}
+}

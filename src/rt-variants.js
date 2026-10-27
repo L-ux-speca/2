@@ -32,6 +32,7 @@ const RTVariants={g:null,
       bullets:[],shots:[],warnings:[],objects:[],activeAbilities:[],fx:[],tasks:[],
       patternTimer:1.6,patternCount:0,beat:0,beatTimer:0,progress:0,chase:35,
       jumpVy:0,hitTimer:0,extra:'',selectedTarget:'boss'};
+    this.genre()?.phase?.(this,1);
     App.showSkills(c,true);
     const targetButton=document.querySelector('.target-button');
     if(targetButton)targetButton.remove();
@@ -85,7 +86,7 @@ const RTVariants={g:null,
   hitHero(damage,opts={}){
     const g=this.g;
     if(g.state!=='active'||g.phaseWait>0||g.inv>0||g.shield>0||Cheats.god)return false;
-    g.hp=Math.max(0,g.hp-damage*(g.hard?1.25:1));
+    g.hp=Math.max(0,g.hp-damage*(g.hard?1.35:1));
     g.inv=g.hard?.53:.73;g.hitTimer=.3;
     if(opts.slow)g.slow=1.6;
     if(g.bossId==='sonic')g.chase=clamp(g.chase-12,0,100);
@@ -291,7 +292,7 @@ const RTVariants={g:null,
     h.p2HP.textContent=Math.ceil(g.bossHP)+' / '+g.bossMaxHP;
     h.p2HPBar.style.width=100*g.bossHP/g.bossMaxHP+'%';
     h.p2PEBar.style.width='0%';h.p2GuardBar.style.width='0%';
-    h.p2Meta.textContent=g.info.genre;
+    h.p2Meta.textContent=g.formName?g.formName+' · '+g.info.genre:g.info.genre;
     h.rtCharge.style.width='0%';h.timer.textContent=['','I','II','III'][g.phase];
     h.rounds.textContent=g.hard?'LUNATIC':'EASY';
     h.attackText.textContent='АТАКА '+Math.floor(g.gauge)+'%';

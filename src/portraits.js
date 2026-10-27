@@ -52,37 +52,8 @@ App.home = function() {
   fallback.hidden = !!portraitPath(char(this.config.p1));
   hero.prepend(fallback);
 
-  const selector = document.createElement('section');
-  selector.className = 'home-portrait-selector';
-  selector.setAttribute('aria-label', 'Галерея персонажей');
-  selector.innerHTML = `<div class="home-portrait-heading">
-    <div><span class="eyebrow">ВСЕ БОЙЦЫ</span><h3>Выбери будущего чемпиона</h3></div>
-  </div><div class="home-portrait-strip" style="--fighter-count:${CHARS.length}">${CHARS.map(c => `
-    <button type="button" class="home-portrait-button ${c.id === App.config.p1 ? 'selected' : ''}"
-      data-featured-character="${c.id}" title="${esc(c.name)}">
-      ${portraitPath(c)?`<img src="${esc(portraitPath(c))}" alt="" loading="lazy" decoding="async">`:`<div class="portrait-fallback">${proceduralPortrait(c)}</div>`}
-      <span>${esc(c.short)}</span>
-    </button>`).join('')}</div>`;
-  footer.before(selector);
-
-  selector.querySelectorAll('[data-featured-character]').forEach(button => {
-    button.addEventListener('click', () => {
-      const id = button.dataset.featuredCharacter;
-      const fighter = char(id);
-      App.config.p1 = id;
-      featured.hidden=!portraitPath(fighter);
-      if(portraitPath(fighter))featured.src=portraitPath(fighter);
-      fallback.hidden=!!portraitPath(fighter);
-      if(!fallback.hidden)fallback.innerHTML=proceduralPortrait(fighter);
-      featured.alt = `Портрет: ${fighter.name}`;
-      const label = hero.querySelector('.hero-bottom span');
-      const description = hero.querySelector('.hero-bottom p');
-      if (label) label.textContent = fighter.name.toUpperCase();
-      if (description) description.textContent = fighter.tag;
-      selector.querySelectorAll('[data-featured-character]')
-        .forEach(item => item.classList.toggle('selected', item === button));
-    });
-  });
+  // The complete roster is available in character select and Encyclopedia.
+  // Avoid 14 additional images, buttons and network requests on the home screen.
 
   const current = char(App.config.p1);
   const label = hero.querySelector('.hero-bottom span');
