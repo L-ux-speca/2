@@ -1,0 +1,10 @@
+{
+  "name": "tokyo-dawn",
+  "version": "2.3.0",
+  "private": true,
+  "description": "Tokyo Dawn — modular 2D browser fighting game",
+  "scripts": {
+    "test": "node tests/combat.test.cjs",
+    "build:standalone": "node tools/build.mjs"
+  }
+}

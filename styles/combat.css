@@ -1,0 +1,45 @@
+/* Theme palettes override the older fixed dark backgrounds without affecting portraits. */
+body.warm {
+  --bg:#261b1b; --panel:#332423; --line:#725047; --ink:#fff0df;
+  --muted:#d5b4a2; --cyan:#f6b36c; --pink:#ff9688; --gold:#fbe0a4;
+  background:radial-gradient(circle at 45% -15%,#53342a,#23191b 60%);
+}
+body.warm .topbar,body.warm .game-shell,body.warm .menu,body.warm .panel,
+body.warm .step-card,body.warm .char-card,body.warm .modal,
+body.warm .hero,body.warm .hintbox,body.warm input,body.warm select,
+body.warm textarea,body.warm .stats div,body.warm .mode-btn:not(.primary) {
+  background-color:#332423;
+  border-color:#725047;
+}
+body.warm .hero {
+  background-image:radial-gradient(ellipse at 63% 68%,#78533c,#382927 63%,#241a1b);
+}
+body.warm button:not(.primary):not(.ghost),body.warm .slot-btn {background:#49302c;border-color:#855c4b}
+body.warm button:not(.primary):hover {background:#684139}
+body.warm .primary {color:#301d19}
+body.warm .hero-copy p,body.warm .feature p,body.warm .help-table {color:#ecd1bc}
+
+body.contrast {
+  --bg:#000; --panel:#000; --line:#fff; --ink:#fff;
+  --muted:#fff; --cyan:#00ffcf; --pink:#ff4d82; --gold:#ffea00;
+  background:#000;
+}
+body.contrast .topbar,body.contrast .game-shell,body.contrast .panel,
+body.contrast .step-card,body.contrast .char-card,body.contrast .modal,
+body.contrast .hero,body.contrast .hintbox,body.contrast input,
+body.contrast select,body.contrast textarea,body.contrast .stats div,
+body.contrast .mode-btn:not(.primary) {background-color:#000;border-color:#fff}
+body.contrast .hero {background-image:radial-gradient(ellipse,#00251f,#000 68%)}
+body.contrast button:not(.primary) {background:#070707;border-color:#fff;color:#fff}
+body.contrast button:hover {background:#152a25}
+body.contrast .primary {color:#000}
+body.contrast .hero-copy p,body.contrast .feature p,body.contrast .help-table,
+body.contrast .footer,body.contrast .hero-bottom span {color:#fff}
+
+.result p.muted {line-height:1.9;max-width:600px;margin:auto}
+.help-table kbd {white-space:normal;text-align:right}
+.dash-status {flex-shrink:0;min-width:110px;padding:5px 9px;border:1px solid #4b5967;border-radius:5px;color:#a2adbb;font-size:10px;letter-spacing:.5px;text-align:center;}
+.dash-status.ready {border-color:#54867d;background:#1b393a;color:#a9efda;}
+.dash-status b {display:block;font-size:11px;letter-spacing:0;}
+@media(max-width:760px){.dash-status{display:none}}
+
