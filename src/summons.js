@@ -14,10 +14,7 @@
     return entity;
   };
 
-  Fight.summonBox=function(s){
-    const robot=s.shape==='robot',half=robot?36:23,h=robot?132:100;
-    return {x:s.x-half,y:s.y-h,w:half*2,h};
-  };
+  Fight.summonBox=function(s){return Hitbox.summon(s)};
   Fight.damageSummon=function(s,amount,actor){
     if(!s||s.kind!=='summon'||s.life<=0||s.hp<=0||actor?.side===s.owner)return false;
     const loss=clamp(Number(amount)||0,0,500);
@@ -35,25 +32,25 @@
     return true;
   };
 
-  const cast=Fight.cast.bind(Fight);
-  Fight.cast=function(actor,index){
-    const g=this.g,before=g?.e?.length||0;
+  CombatHooks.onBeforeCast((fight,actor,index)=>{
+    const g=fight.g;
     if(actor.id==='mechamaru'&&index===2&&(actor.robot||g?.e?.some(e=>
       e.kind==='summon'&&e.shape==='robot'&&e.owner===actor.side&&e.hp>0&&e.life>0)))
       return false;
-    const success=cast(actor,index);
-    if(success&&actor.id==='mechamaru'&&index===2){
-      const puppet=g.e.slice(before).find(e=>e.kind==='summon'&&e.owner===actor.side&&e.shape==='robot');
+    return true;
+  });
+  CombatHooks.onAfterCast((fight,actor,index)=>{
+    if(actor.id==='mechamaru'&&index===2){
+      const puppet=fight.g.e.find(e=>e.kind==='summon'&&e.owner===actor.side&&e.shape==='robot'&&e.life>0);
       if(puppet){
         puppet.x=550;puppet.y=460;
         puppet.hp=55;puppet.maxHp=55;
         puppet.r=38;puppet.dmg=0;
         puppet.stationary=true;puppet.life=30;puppet.attackTimer=999;
-        this.float('КУКЛА · 55 HP',puppet.x,puppet.y-150,actor.c.color);
+        fight.float('КУКЛА · 55 HP',puppet.x,puppet.y-150,actor.c.color);
       }
     }
-    return success;
-  };
+  });
 
   const oldAI=Fight.ai.bind(Fight);
   Fight.ai=function(actor,enemy){
@@ -66,59 +63,7 @@
     return command;
   };
 
-  // Check swept projectile paths. High-speed attacks must not pass through a thin clone.
-  const segmentHits=(p0x,p0y,p1x,p1y,s,r)=>{
-    const dx=p1x-p0x,dy=p1y-p0y,div=dx*dx+dy*dy||1;
-    const cx=s.x,cy=s.y-(s.shape==='robot'?67:49);
-    const t=clamp(((cx-p0x)*dx+(cy-p0y)*dy)/div,0,1);
-    const px=p0x+t*dx,py=p0y+t*dy;
-    const rx=(s.shape==='robot'?36:23)+r,ry=(s.shape==='robot'?66:50)+r;
-    return ((px-cx)/rx)**2+((py-cy)/ry)**2<=1;
-  };
-  const stepEntities=Fight.entitiesStep.bind(Fight);
-  Fight.entitiesStep=function(dt){
-    const g=this.g;
-    if(g?.e?.length){
-      const summons=g.e.filter(e=>e.kind==='summon'&&e.hp>0&&e.life>0);
-      const attacks=g.e.filter(e=>e.kind!=='summon'&&e.life>0);
-      for(const a of attacks){
-        const owner=g.f[a.owner];
-        if(!owner)continue;
-        for(const s of summons){
-          if(s.owner===a.owner||s.hp<=0||s.life<=0||a.life<=0)continue;
-          if(a.kind==='projectile'){
-            const endX=a.x+(a.vx||0)*dt;
-            const endY=a.y+(a.vy||0)*dt;
-            if(segmentHits(a.x,a.y,endX,endY,s,a.r||10)){
-              this.damageSummon(s,a.dmg,owner);
-              a.life=0;
-            }
-            continue;
-          }
-          if(!['area','channel','orbit','trap'].includes(a.kind))continue;
-          const next=a.summonNext??(a.summonNext={});
-          if((next[s.uid]||0)>g.t)continue;
-          const cy=s.y-(s.shape==='robot'?67:49),radius=s.shape==='robot'?36:23;
-          let connected=false;
-          if(a.kind==='area')connected=hypot(s.x-a.x,cy-a.y)<a.r+radius;
-          if(a.kind==='channel')connected=owner.st.channel>0&&
-            owner.face*(s.x-owner.x)>-radius&&Math.abs(s.x-owner.x)<a.r+radius&&
-            Math.abs(cy-(owner.y-56))<75;
-          if(a.kind==='orbit')for(let i=0;i<(a.count||2);i++){
-            const angle=g.t*5+i*Math.PI*2/(a.count||2);
-            const ox=owner.x+Math.cos(angle)*a.r,oy=owner.y-45+Math.sin(angle)*a.r*.55;
-            if(hypot(s.x-ox,cy-oy)<radius+15){connected=true;break}
-          }
-          if(a.kind==='trap')connected=Math.abs(s.x-a.x)<a.r+radius&&
-            Math.abs(s.y-a.y)<95;
-          if(connected&&this.damageSummon(s,a.dmg,owner)){
-            next[s.uid]=g.t+(a.kind==='area'?100:Math.max(.12,a.period||.18));
-          }
-        }
-      }
-    }
-    return stepEntities(dt);
-  };
+  // All collisions with physical summons are now handled once in collisions.js.
 
   // Remaining puppet armor is a separate health pool, not extra fighter HP.
   const visual=Fight.visualStep.bind(Fight);
@@ -238,9 +183,8 @@
       for(const b of g.bullets){
         let intercepted=false;
         if(b.life>0)for(const a of allies){
-          const dx=b.vx*dt,dy=b.vy*dt,den=dx*dx+dy*dy||1;
-          const frac=clamp(((a.x-b.x)*dx+(a.y-b.y)*dy)/den,0,1);
-          if(hypot(a.x-(b.x+dx*frac),a.y-(b.y+dy*frac))>a.r+(b.r||5))continue;
+          if(!Hitbox.sweepCircleCircle(b.x,b.y,
+             b.x+(b.vx||0)*dt,b.y+(b.vy||0)*dt,b.r||5,a.x,a.y,a.r))continue;
           a.entity.hp=Math.max(0,a.entity.hp-(b.damage||5));
           this.spark(a.x,a.y,g.c.color,5);
           if(a.entity.hp<=0){a.entity.life=0;this.spark(a.x,a.y,g.c.color,18)}

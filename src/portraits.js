@@ -18,11 +18,14 @@ const PORTRAIT_PATHS = Object.freeze({
   mechamaru: 'assets/portraits/mechamaru.jpg',
   kisei: 'assets/portraits/kisei.jpg'
 });
+const portraitPath=c=>c?.portrait||PORTRAIT_PATHS[c?.id]||'';
+const proceduralPortrait=portrait;
 
 // The original UI invokes portrait() in both the selection cards and hero info.
 portrait = function(c) {
+  if(!portraitPath(c))return proceduralPortrait(c);
   return `<div class="fighter-portrait" style="--portrait-accent:${c.color}">
-    <img class="portrait-original" src="${PORTRAIT_PATHS[c.id]}"
+    <img class="portrait-original" src="${esc(portraitPath(c))}"
       alt="Портрет: ${esc(c.name)}" loading="lazy" decoding="async">
   </div>`;
 };
@@ -37,21 +40,27 @@ App.home = function() {
   hero.classList.add('hero-with-portrait');
   const featured = document.createElement('img');
   featured.className = 'hero-featured-portrait';
-  featured.src = PORTRAIT_PATHS[this.config.p1];
+  featured.src = portraitPath(char(this.config.p1));
+  if(!featured.src||!portraitPath(char(this.config.p1)))featured.hidden=true;
   featured.alt = 'Избранный персонаж';
   featured.decoding = 'async';
   featured.fetchPriority = 'high';
   hero.prepend(featured);
+  const fallback = document.createElement('div');
+  fallback.className = 'hero-featured-fallback';
+  fallback.innerHTML = proceduralPortrait(char(this.config.p1));
+  fallback.hidden = !!portraitPath(char(this.config.p1));
+  hero.prepend(fallback);
 
   const selector = document.createElement('section');
   selector.className = 'home-portrait-selector';
   selector.setAttribute('aria-label', 'Галерея персонажей');
   selector.innerHTML = `<div class="home-portrait-heading">
     <div><span class="eyebrow">ВСЕ БОЙЦЫ</span><h3>Выбери будущего чемпиона</h3></div>
-  </div><div class="home-portrait-strip">${CHARS.map(c => `
+  </div><div class="home-portrait-strip" style="--fighter-count:${CHARS.length}">${CHARS.map(c => `
     <button type="button" class="home-portrait-button ${c.id === App.config.p1 ? 'selected' : ''}"
       data-featured-character="${c.id}" title="${esc(c.name)}">
-      <img src="${PORTRAIT_PATHS[c.id]}" alt="" loading="lazy" decoding="async">
+      ${portraitPath(c)?`<img src="${esc(portraitPath(c))}" alt="" loading="lazy" decoding="async">`:`<div class="portrait-fallback">${proceduralPortrait(c)}</div>`}
       <span>${esc(c.short)}</span>
     </button>`).join('')}</div>`;
   footer.before(selector);
@@ -61,7 +70,10 @@ App.home = function() {
       const id = button.dataset.featuredCharacter;
       const fighter = char(id);
       App.config.p1 = id;
-      featured.src = PORTRAIT_PATHS[id];
+      featured.hidden=!portraitPath(fighter);
+      if(portraitPath(fighter))featured.src=portraitPath(fighter);
+      fallback.hidden=!!portraitPath(fighter);
+      if(!fallback.hidden)fallback.innerHTML=proceduralPortrait(fighter);
       featured.alt = `Портрет: ${fighter.name}`;
       const label = hero.querySelector('.hero-bottom span');
       const description = hero.querySelector('.hero-bottom p');

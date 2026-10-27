@@ -20,6 +20,6 @@ const standalone=source
   return `'data:${mime};base64,${contents.toString('base64')}'`;
 });
 if(count!==14)throw Error(`Expected 14 original portraits, found ${count}`);
-const out=path.resolve(dir,'..','Tokyo_Dawn_Standalone.html');
+const out=path.resolve(dir,'..','Tokyo_Dawn_2_5_Standalone.html');
 fs.writeFileSync(out,standalone);
 console.log(`${out} (${Math.round(Buffer.byteLength(standalone)/1024)} KiB, ${count} untouched portraits)`);

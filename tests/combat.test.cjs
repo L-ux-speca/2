@@ -41,6 +41,18 @@ function battle(p1='lapis',p2='caesar'){
 const tick=(n=1)=>{for(let i=0;i<n;i++)evalGame('Fight.step(1/60);Input.end()')};
 
 assert.equal(evalGame('CHARS.length'),14);
+assert.equal(evalGame('ARENAS.length'),5);
+assert.ok(evalGame("Hitbox.rectRect({x:0,y:0,w:30,h:20},{x:20,y:5,w:30,h:20})"));
+assert.ok(!evalGame("Hitbox.rectRect({x:0,y:0,w:30,h:20},{x:40,y:5,w:20,h:20})"));
+assert.ok(evalGame("Hitbox.circleRect(9,9,2,{x:10,y:10,w:20,h:20})"),
+  'Circular attacks touch corners correctly');
+assert.ok(evalGame("Hitbox.sweepCircleRect(0,20,130,20,5,{x:60,y:0,w:15,h:40})"),
+  'Swept hitbox catches a projectile crossing a narrow object in one frame');
+assert.ok(!evalGame("Hitbox.sweepCircleRect(0,70,130,70,5,{x:60,y:0,w:15,h:40})"),
+  'Swept hitbox does not invent a hit for a distant trajectory');
+assert.equal(evalGame("SpriteSystem.frameIndex({frames:4,fps:5},.45)"),2,
+  'Sprite animation selects the appropriate frame based on elapsed time');
+assert.equal(evalGame("SpriteSystem.stateFor({hp:20,stun:0,block:false,attack:{kind:'kick'},pose:0,grounded:true,moving:false})"),'kick');
 for(const id of evalGame('CHARS.map(c=>c.id)')){
   const ext=id==='lapis'?'png':'jpg';
   assert.ok(fs.statSync(path.join(root,'assets','portraits',`${id}.${ext}`)).size>10000);
@@ -190,7 +202,7 @@ evalGame(`(() => {const s=Fight.g.e.find(e=>e.kind==='summon');
   Fight.projectile(Fight.g.f[1],{x:s.x-70,y:s.y-49,vx:4800,dmg:4,r:5,life:1});
 })()`);
 evalGame('Fight.entitiesStep(1/60)');
-assert.ok(clone().hp<10,'High-speed projectile damages summon hitboxes');
+assert.equal(clone().hp,6,'A projectile removes exactly 4 HP: duplicate collision paths are gone');
 evalGame(`(() => {const s=Fight.g.e.find(e=>e.kind==='summon'&&e.hp>0);
   Fight.area(Fight.g.f[1],{x:s.x,y:s.y-50,r:55,dmg:20,life:.3});
 })()`);
@@ -236,4 +248,98 @@ for(const hero of evalGame('CHARS.map(c=>c.id)')){
     evalGame(`RT.g.pe=RT.g.c.pe;RT.g.cd[${i}]=0;RT.cast(${i})`);
   }
 }
-console.log('PASS: modular scripts, Tokyo Dawn branding, flying harmless Lapis anchor, 14 portraits, combat feel, fixed arenas, slower Araya gauge, Kokichi suit, Airi spikes, summon health/hitboxes, all normal/RT techniques');
+
+// Data-driven future content: add a fighter and arena without patching core logic.
+evalGame(`CharacterCatalog.register({id:'testfighter',name:'Тестовый герой',short:'Тест',
+  tag:'Проверка нового контента',hp:90,pe:100,speed:8,punch:10,kick:12,
+  color:'#73c9de',hair:'#dadde3',outfit:'#43586b',palette:'projectile shield',
+  skills:[{...SK('Тестовый снаряд',12,3,'Бесконтактная атака'),effect:'projectile',
+    params:{damage:17,speed:650}}]})`);
+assert.equal(evalGame('CHARS.length'),15,'A character is registered without modifying core.js');
+assert.throws(()=>evalGame("CharacterCatalog.register({id:'testfighter'})"),/Duplicate/);
+battle('testfighter','caesar');
+assert.ok(evalGame('Fight.cast(Fight.g.f[0],0)'));
+assert.equal(evalGame("Fight.g.e.find(e=>e.kind==='projectile')?.dmg"),17,
+  'Generic registered techniques create real fight projectiles');
+evalGame("RT.start('testfighter','easy',true);RT.g.state='active';RT.g.phaseWait=0;RT.cast(0)");
+assert.ok(evalGame('RT.g.shots.length')>0,'Generic registered skill functions in Araya RT');
+
+evalGame("ArenaCatalog.register({id:'test_arena',name:'Тестовая арена',colors:['#111111','#222222'],camera:'follow'})");
+assert.equal(evalGame('ARENAS.length'),6,'Registered arenas appear in the arena selector data');
+assert.equal(evalGame("ArenaCatalog.get('test_arena').colors[1]"),'#222222');
+battle('lapis','caesar');
+evalGame("Fight.g.cfg.arena='test_arena'");
+assert.ok(evalGame('Fight.ruleArenaEndless()'), 'Camera rules are read from arena metadata');
+
+// Sprite manifest test uses an in-memory fake image (no user artwork is generated).
+ctx.Image=class {constructor(){this.complete=true;this.naturalWidth=160;this.naturalHeight=100;}set src(value){this.path=value;}};
+let spriteFrame=-1;
+ctx.fakeDraw={save(){},restore(){},translate(){},scale(){},drawImage(_img,sx){spriteFrame=sx}};
+evalGame("SpriteSystem.register('testfighter',{displayHeight:100,states:{idle:{src:'assets/sprites/fake.png',frameWidth:80,frameHeight:100,frames:2,fps:2}}})");
+evalGame("var spriteTestFighter={c:{id:'testfighter'},x:100,y:460,face:1,hp:100,st:{},stun:0,block:false,attack:null,pose:0,crouch:false,grounded:true,moving:false};SpriteSystem.draw(fakeDraw,spriteTestFighter,1,1)");
+evalGame('SpriteSystem.draw(fakeDraw,spriteTestFighter,1.6,1)');
+assert.equal(spriteFrame,80,'Animated sprites change frames without affecting fighter hitboxes');
+
+// Four boss territories, three distinct genres and one unchanged naval RT.
+assert.equal(evalGame('RTBossCatalog.all().length'),4);
+assert.equal(evalGame("RTBossCatalog.get('sonic').title"),'Погоня Онсоку');
+assert.ok(evalGame("typeof Encyclopedia.open==='function'"),'Encyclopedia is linked to the project');
+assert.ok(evalGame("!!ENCYCLOPEDIA_LORE.lapis"),'Lore can be edited without touching game code');
+assert.equal(evalGame('RTVariantPatterns.size'),3,'Only the three new bosses use the variant engine');
+
+for(const boss of ['david','airi','sonic']){
+  evalGame(`RTVariants.start('lapis','${boss}','easy',true);
+    RTVariants.g.state='active';RTVariants.g.phaseWait=0;App.screen='rt'`);
+  assert.equal(evalGame('RTVariants.g.bossId'),boss);
+  assert.equal(evalGame('RT.g'),null,'Araya RT state is not mixed into another genre');
+  assert.ok(evalGame('RTVariants.cast(1)'),`Lapis railgun must work in ${boss} RT`);
+  assert.ok(evalGame('RTVariants.g.bossHP')<420,'Railgun directly damages the RT boss');
+  evalGame('RTVariants.genre().pattern(RTVariants)');
+  assert.ok(evalGame('RTVariants.g.warnings.length')>0,'Genre creates its own warned attacks');
+  evalGame('RTVariants.g.warnings.splice(0).forEach(w=>RTVariants.genre().trigger(RTVariants,w))');
+  assert.ok(evalGame('RTVariants.g.bullets.length+RTVariants.g.objects.length+RTVariants.g.targets.length')>1,
+    'Genre warning resolves to gameplay hazards or targets');
+  evalGame('Input.clear();RTVariants.step(1/60)');
+  assert.ok(evalGame('RTVariants.g.hp')>0,'The first warning cannot immediately kill the hero');
+}
+
+evalGame("RTVariants.start('lapis','david','easy',true);RTVariants.g.state='active';RTVariants.g.phaseWait=0;");
+evalGame("RTVariants.genre().trigger(RTVariants,{type:'cloud',x:260,y:350,r:60})");
+assert.ok(evalGame("RTVariants.g.objects.some(o=>o.kind==='poison'&&o.life>2)"),
+  'David spawns a persistent, damaging poison area');
+evalGame("RTVariants.genre().trigger(RTVariants,{type:'wall',safe:305})");
+assert.ok(evalGame('RTVariants.g.bullets.length')>0,'David gas blockade creates physical projectiles');
+
+evalGame("RTVariants.start('lapis','airi','easy',true);RTVariants.g.state='active';RTVariants.g.phaseWait=0;");
+evalGame("Input.pressed.add(Keys[0].up);RTVariants.genre().move(RTVariants,1/60,0)");
+assert.equal(evalGame('RTVariants.g.lane'),0,'Airi can switch lanes via configured controls');
+evalGame('Input.end()');
+evalGame("RTVariants.genre().trigger(RTVariants,{type:'clone',lane:2})");
+assert.ok(evalGame('RTVariants.target().id.startsWith("clone")'),'Airi clone can be targeted');
+const cloneLife=evalGame('RTVariants.target().hp');
+evalGame('RTVariants.hitTarget(RTVariants.target(),10)');
+assert.equal(evalGame('RTVariants.target().hp'),cloneLife-10,'Airi clone has a separate hitbox health pool');
+
+evalGame("RTVariants.start('lapis','sonic','easy',true);RTVariants.g.state='active';RTVariants.g.phaseWait=0;");
+evalGame('Input.pressed.add(Keys[0].up);RTVariants.genre().move(RTVariants,1/60,1)');
+assert.ok(!evalGame('RTVariants.g.grounded'),'Onsoku runner supports a physical jump');
+assert.ok(evalGame('RTVariants.g.y')<462,'The runner leaves the ground');
+const sonicHP=evalGame('RTVariants.g.bossHP');
+evalGame('RTVariants.hitTarget(RTVariants.target(),25)');
+assert.ok(evalGame('RTVariants.g.bossHP')>sonicHP-25,
+  'Attacks while lagging behind Onsoku are weakened');
+evalGame('RTVariants.g.chase=80;RTVariants.hitTarget(RTVariants.target(),25)');
+assert.ok(evalGame('RTVariants.g.bossHP')<sonicHP-25,
+  'Catching up to Onsoku restores full attack damage');
+
+// Passing 100% gauge during 1-v-CPU launches the selected new RT automatically.
+for(const boss of ['david','airi','sonic']){
+  battle('lapis',boss);
+  evalGame('App.screen="fight";Fight.g.mode="cpu";Fight.g.rtGauge=99.98;Fight.g.rtUsed=false');
+  tick(1);
+  assert.equal(evalGame('RTVariants.g.bossId'),boss,
+    'Normal fight transitions into the matching boss genre: '+boss);
+  assert.ok(evalGame('Fight.g.rtUsed'),'The RT gauge can activate only once');
+}
+
+console.log('PASS: 14 original fighters and all moves, four RT bosses, David poison survival, Airi rhythm lanes/clones, Onsoku pursuit/jumping, encyclopedia and modular content');

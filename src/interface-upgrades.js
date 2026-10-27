@@ -43,7 +43,7 @@
     if (controls) controls.innerHTML = `<kbd>${esc(key(0, 'left'))}</kbd><kbd>${esc(key(0, 'right'))}</kbd> движение · <kbd>${esc(key(0, 'up'))}</kbd> прыжок · <kbd>${esc(key(0, 'block'))}</kbd> блок<br><kbd>${esc(key(0, 'punch'))}</kbd><kbd>${esc(key(0, 'kick'))}</kbd> удары · <kbd>${esc(join(0, 's1', 's2', 's3', 's4'))}</kbd> техники`;
     const rtDifficulty = [...document.querySelectorAll('.settings-grid .field')]
       .find(field => field.querySelector('label')?.textContent.includes('СЛОЖНОСТЬ РТ'));
-    if (rtDifficulty && !(this.config.mode === 'cpu' && this.config.p2 === 'araya')) rtDifficulty.remove();
+    if (rtDifficulty && !(this.config.mode === 'cpu' && RTBossCatalog.has(this.config.p2))) rtDifficulty.remove();
     for (const side of [0, 1]) {
       const id = this.config[`p${side + 1}`];
       const hp = this.config.rules.includes('last_chance') ? 1 :

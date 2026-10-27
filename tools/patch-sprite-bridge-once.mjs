@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const file=path.join(root,'src','app.js');
+const before='function drawFighter(ctx,f,time,scale=1,cinematic=false){const c=f.c;';
+const after='function drawFighter(ctx,f,time,scale=1,cinematic=false){if(SpriteSystem.draw(ctx,f,time,scale,cinematic))return;const c=f.c;';
+let source=fs.readFileSync(file,'utf8');
+if(!source.includes(before)||source.includes(after))throw Error('Unexpected drawFighter function');
+source=source.replace(before,after);
+fs.writeFileSync(file,source);

@@ -102,12 +102,9 @@
     }
   };
 
-  const cast=Fight.cast.bind(Fight);
-  Fight.cast=function(f,i){
-    const success=cast(f,i);
-    if(success&&f.side===0&&this.g?.coach)this.g.coach.skillUsed=true;
-    return success;
-  };
+  CombatHooks.onAfterCast((fight,f)=>{
+    if(f.side===0&&fight.g?.coach)fight.g.coach.skillUsed=true;
+  });
 
   const originalTrainingUI=Fight.trainingUI.bind(Fight);
   Fight.trainingUI=function(){

@@ -205,15 +205,14 @@
     return true;
   }
 
-  const originalCast = Fight.cast.bind(Fight);
-  Fight.cast = function(f, index) {
+  CombatHooks.onCastOverride((fight,f,index)=>{
     if (f.id === 'airi' && index === 2) {
-      if (!beginSpecial(f, index, this)) return false;
+      if (!beginSpecial(f, index, fight)) return false;
       f.recovery = .42;
       // Three steel spikes originate at Airi, not at the opponent's feet.
       for (let height = 0; height < 3; height++) {
         const h = height;
-        this.queue(f, height * .12, () => this.projectile(f, {
+        fight.queue(f, height * .12, () => fight.projectile(f, {
           x:f.x + f.face * 48, y:f.y - 23 - h * 26,
           vx:f.face * 680, dmg:12, r:13, life:2,
           shape:'spike', level:h===0?'low':'high', kb:135
@@ -222,28 +221,29 @@
       return true;
     }
     if (f.id === 'kayano' && index === 0) {
-      if (!beginSpecial(f, index, this)) return false;
+      if (!beginSpecial(f, index, fight)) return false;
       const comboPower = clamp(1 + f.comboPoints * .35, 1, 2.75);
       f.recovery = 1.15;
-      for (let hit = 0; hit < 5; hit++) this.queue(f, .09 + hit * .17, () => {
-        const enemy = this.g.f[1 - f.side], distance = enemy.x - f.x;
+      for (let hit = 0; hit < 5; hit++) fight.queue(f, .09 + hit * .17, () => {
+        const enemy = fight.g.f[1 - f.side], distance = enemy.x - f.x;
         f.face = Math.sign(distance) || f.face;
         if (Math.abs(distance) > 185 || Math.abs(enemy.y - f.y) > 90) return;
         f.x = clamp(f.x + f.face * Math.min(30, Math.max(0, Math.abs(distance) - 47)), 28, 1072);
         f.pose = .18;
-        this.area(f, {x:f.x + f.face * 52, y:f.y - 53, r:70,
+        fight.area(f, {x:f.x + f.face * 52, y:f.y - 53, r:70,
           dmg:5 * comboPower, kb:hit === 4 ? 270 : 45, life:.14, shape:'meteor'});
-        this.spark(f.x + f.face * 55, f.y - 53, f.c.color, 6);
+        fight.spark(f.x + f.face * 55, f.y - 53, f.c.color, 6);
       }, true);
       return true;
     }
-    const success = originalCast(f, index);
-    if (success && this.g.mode === 'cpu' && f.side === 1 && f.id === 'david') {
+    return undefined;
+  });
+  CombatHooks.onAfterCast((fight,f,index)=>{
+    if (fight.g.mode === 'cpu' && f.side === 1 && f.id === 'david') {
       f.cd[index] *= 1.55; // No hidden fast-cooldown advantage for David's AI.
       f.aiTimer = Math.max(f.aiTimer, .6);
     }
-    return success;
-  };
+  });
 
   // Advancing an arcade/survival stage should dismiss the result without
   // invoking the result screen's 'X means return to menu' behavior.

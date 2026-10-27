@@ -1,8 +1,18 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1119"><meta name="description" content="Tokyo Dawn: 14 бойцов, 5 арен."><title>Tokyo Dawn — 2D-файтинг</title>
-<link rel="stylesheet" href="styles/base.css"><link rel="stylesheet" href="styles/portraits.css"><link rel="stylesheet" href="styles/combat.css"></head><body><header class="topbar"><div class="brand" onclick="App.home()"><div class="mark"><b>ϟ</b></div><div class="brand-name">Tokyo Dawn</div></div><nav class="topnav"><button onclick="App.help()">Управление</button><button onclick="App.settings()">Настройки ↗</button></nav></header><main id="app"></main><div id="modalRoot"></div><div id="toast" class="toast hidden" role="status"></div>
+<link rel="stylesheet" href="styles/base.css"><link rel="stylesheet" href="styles/portraits.css"><link rel="stylesheet" href="styles/combat.css"><link rel="stylesheet" href="styles/encyclopedia.css"></head><body><header class="topbar"><div class="brand" onclick="App.home()"><div class="mark"><b>ϟ</b></div><div class="brand-name">Tokyo Dawn</div></div><nav class="topnav"><button onclick="App.help()">Управление</button><button onclick="App.settings()">Настройки ↗</button></nav></header><main id="app"></main><div id="modalRoot"></div><div id="toast" class="toast hidden" role="status"></div>
 <script src="src/core.js"></script>
+<script src="src/data/characters.js"></script>
+<script src="src/data/encyclopedia.js"></script>
+<script src="src/data/arenas.js"></script>
+<script src="src/data/rt-bosses.js"></script>
+<script src="src/data/custom-content.js"></script>
+<script src="src/hitboxes.js"></script>
+<script src="src/data/sprites.js"></script>
+<script src="src/sprites.js"></script>
 <script src="src/app.js"></script>
+<script src="src/arena-rendering.js"></script>
+<script src="src/combat-hooks.js"></script>
 <script src="src/fight.js"></script>
 <script src="src/rt.js"></script>
 <script src="src/network.js"></script>
@@ -10,11 +20,20 @@
 <script src="src/ai.js"></script>
 <script src="src/projectile-defense.js"></script>
 <script src="src/rt-abilities.js"></script>
+<script src="src/skills.js"></script>
 <script src="src/interface-upgrades.js"></script>
 <script src="src/builder-templates.js"></script>
 <script src="src/rt-combat.js"></script>
 <script src="src/combat-feel.js"></script>
 <script src="src/summons.js"></script>
 <script src="src/lapis-anchor.js"></script>
+<script src="src/collisions.js"></script>
+<script src="src/rt-variants.js"></script>
+<script src="src/rt-bosses/david.js"></script>
+<script src="src/rt-bosses/airi.js"></script>
+<script src="src/rt-bosses/sonic.js"></script>
+<script src="src/rt-variants-render.js"></script>
+<script src="src/encyclopedia.js"></script>
+<script src="src/rt-hub.js"></script>
 <script src="src/boot.js"></script>
 </body></html>
