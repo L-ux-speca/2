@@ -92,6 +92,48 @@ body.playing .topbar{display:none}body.playing main{padding:0;max-width:none}.ga
   .home-portrait-selector { padding: 14px 10px; }
 }
 
+</style><style>
+/* Theme palettes override the older fixed dark backgrounds without affecting portraits. */
+body.warm {
+  --bg:#261b1b; --panel:#332423; --line:#725047; --ink:#fff0df;
+  --muted:#d5b4a2; --cyan:#f6b36c; --pink:#ff9688; --gold:#fbe0a4;
+  background:radial-gradient(circle at 45% -15%,#53342a,#23191b 60%);
+}
+body.warm .topbar,body.warm .game-shell,body.warm .menu,body.warm .panel,
+body.warm .step-card,body.warm .char-card,body.warm .modal,
+body.warm .hero,body.warm .hintbox,body.warm input,body.warm select,
+body.warm textarea,body.warm .stats div,body.warm .mode-btn:not(.primary) {
+  background-color:#332423;
+  border-color:#725047;
+}
+body.warm .hero {
+  background-image:radial-gradient(ellipse at 63% 68%,#78533c,#382927 63%,#241a1b);
+}
+body.warm button:not(.primary):not(.ghost),body.warm .slot-btn {background:#49302c;border-color:#855c4b}
+body.warm button:not(.primary):hover {background:#684139}
+body.warm .primary {color:#301d19}
+body.warm .hero-copy p,body.warm .feature p,body.warm .help-table {color:#ecd1bc}
+
+body.contrast {
+  --bg:#000; --panel:#000; --line:#fff; --ink:#fff;
+  --muted:#fff; --cyan:#00ffcf; --pink:#ff4d82; --gold:#ffea00;
+  background:#000;
+}
+body.contrast .topbar,body.contrast .game-shell,body.contrast .panel,
+body.contrast .step-card,body.contrast .char-card,body.contrast .modal,
+body.contrast .hero,body.contrast .hintbox,body.contrast input,
+body.contrast select,body.contrast textarea,body.contrast .stats div,
+body.contrast .mode-btn:not(.primary) {background-color:#000;border-color:#fff}
+body.contrast .hero {background-image:radial-gradient(ellipse,#00251f,#000 68%)}
+body.contrast button:not(.primary) {background:#070707;border-color:#fff;color:#fff}
+body.contrast button:hover {background:#152a25}
+body.contrast .primary {color:#000}
+body.contrast .hero-copy p,body.contrast .feature p,body.contrast .help-table,
+body.contrast .footer,body.contrast .hero-bottom span {color:#fff}
+
+.result p.muted {line-height:1.9;max-width:600px;margin:auto}
+.help-table kbd {white-space:normal;text-align:right}
+
 </style></head><body><header class="topbar"><div class="brand" onclick="App.home()"><div class="mark"><b>ϟ</b></div><div class="brand-name">CLASH OF<br>CHAMPIONS</div></div><nav class="topnav"><span class="pill"><i class="dot"></i> THESEUS EDITION</span><button onclick="App.help()">Управление</button><button onclick="App.settings()">Настройки ↗</button></nav></header><main id="app"></main><div id="modalRoot"></div><div id="toast" class="toast hidden" role="status"></div>
 <script>
 'use strict';
@@ -346,7 +388,19 @@ const target=this.target();if(target&&g.phaseWait<=0){ctx.save();ctx.strokeStyle
 for(const o of g.objects){ctx.save();if(o.kind==='ram')drawShip(ctx,o.x,o.y,1.1,'#d9bdad');if(o.kind==='pulse'){ctx.globalAlpha=o.life/.4;circle(ctx,o.x,o.y,o.r*(1-o.life/.4),'#d6e8d9',true,5)}if(o.kind==='orbit'){for(let j=0;j<o.count;j++){const a=g.t*5+j*Math.PI*2/o.count;circle(ctx,g.x+Math.cos(a)*o.r,g.y+Math.sin(a)*o.r,12,g.c.color)}}if(o.kind==='field'){circle(ctx,o.x,o.y,o.r,g.c.color+'22');circle(ctx,o.x,o.y,o.r,g.c.color+'99',true,2)}if(o.kind==='summon'){circle(ctx,o.x,o.y,14,g.c.color+'66');poly(ctx,[[o.x,o.y-15],[o.x+12,o.y+9],[o.x-12,o.y+9]],g.c.color)}ctx.restore()}
 for(const s of g.shots){line(ctx,s.x-s.vx*.012,s.y-s.vy*.012,s.x,s.y,g.c.color,s.r);circle(ctx,s.x,s.y,Math.max(2,s.r*.6),'#eef7e8')}
 ctx.save();for(const b of g.bullets){if(b.near&&!b.grazed)circle(ctx,b.x,b.y,b.r+4,'#eeddaf33',true);circle(ctx,b.x,b.y,b.r,b.color);circle(ctx,b.x-1,b.y-1,b.r*.4,'#fff5ce')}ctx.restore();for(const p of g.fx){ctx.globalAlpha=clamp(p.life*2,0,1);circle(ctx,p.x,p.y,2,p.color)}ctx.globalAlpha=1;
-if(g.state!=='finish'||g.won){ctx.save();if(g.inv>0&&Math.floor(g.t*22)%2===0)ctx.globalAlpha=.45;glow(ctx,g.c.color,14);circle(ctx,g.x,g.y,17,g.c.color+'22');circle(ctx,g.x,g.y,13,'#233343');circle(ctx,g.x,g.y,13,g.c.color,true,2);const a=Math.atan2((target?.y||g.y-100)-g.y,(target?.x||g.x)-g.x);poly(ctx,[[g.x+Math.cos(a)*20,g.y+Math.sin(a)*20],[g.x+Math.cos(a+2.5)*10,g.y+Math.sin(a+2.5)*10],[g.x+Math.cos(a-2.5)*10,g.y+Math.sin(a-2.5)*10]],g.c.color);ctx.shadowBlur=0;circle(ctx,g.x,g.y,g.hard?5:4,'#f7f9ec');if(g.shield>0){circle(ctx,g.x,g.y,30,g.c.color+'33');circle(ctx,g.x,g.y,30+Math.sin(g.t*12)*2,g.c.color,true,2)}if(g.mark>0){circle(ctx,g.x,g.y,37,'#e6b0e8',true,2)}ctx.restore()}
+if(g.state!=='finish'||g.won){
+  ctx.save();
+  if(g.inv>0&&Math.floor(g.t*22)%2===0)ctx.globalAlpha=.45;
+  glow(ctx,g.c.color,12);
+  const hero={c:g.c,x:g.x,y:g.y+17,face:g.dx>=0?1:-1,st:{},
+    grounded:false,moving:Math.abs(g.dx)+Math.abs(g.dy)>0,attack:null,
+    crouch:false,pose:0,block:false};
+  drawFighter(ctx,hero,g.t,.35);
+  circle(ctx,g.x,g.y,13,g.c.color+'77',true,1);
+  if(g.shield>0){circle(ctx,g.x,g.y,30,g.c.color+'33');circle(ctx,g.x,g.y,30+Math.sin(g.t*12)*2,g.c.color,true,2)}
+  if(g.mark>0)circle(ctx,g.x,g.y,37,'#e6b0e8',true,2);
+  ctx.restore();
+}
 ctx.fillStyle='#182432';ctx.fillRect(g.x-20,g.y+25,40,2);ctx.fillStyle='#95ddcf';ctx.fillRect(g.x-20,g.y+25,40*(1-g.dashCD/.8),2);if(g.phaseWait>0&&g.phase===3){ctx.fillStyle='#130f1f33';ctx.fillRect(0,0,960,600)}}
 };
 // Optional PeerJS transport is loaded only when an online room is requested.
@@ -881,10 +935,661 @@ window.RTAbilityRegistry = Object.freeze({handlers:RT_SKILL_HANDLERS,helpers:RTA
 
 </script>
 <script>
+'use strict';
+
+// Gameplay and presentation fixes. Loaded after the character and RT adapters.
+// Keep these overrides together until the corresponding core modules are refactored.
+(() => {
+  const key = (player, action) => keyLabel(Keys[player][action]);
+  const join = (player, ...actions) => actions.map(action => key(player, action)).join(' / ');
+  const controlHelp = () => {
+    const listing = (player) => [
+      ['Движение', join(player, 'left', 'right')],
+      ['Прыжок / присед', join(player, 'up', 'down')],
+      ['Удар рукой / ногой', join(player, 'punch', 'kick')],
+      ['Блок / бросок', join(player, 'block', 'throw')],
+      ['Техники', join(player, 's1', 's2', 's3', 's4')],
+      ['Добивание', key(player, 'finish')]
+    ].map(([title, keys]) => `<p><span>${title}</span><kbd>${esc(keys)}</kbd></p>`).join('');
+    return `<div class="two-cols">
+      <section><div class="eyebrow">Игрок 1 · файтинг</div><div class="help-table" style="grid-template-columns:1fr">${listing(0)}</div></section>
+      <section><div class="eyebrow">Игрок 2 · файтинг</div><div class="help-table" style="grid-template-columns:1fr">${listing(1)}</div></section>
+    </div><div class="section-line"></div>
+    <div class="eyebrow">РТ Араи</div><div class="help-table">
+      <p><span>Движение</span><kbd>${esc(join(0, 'left', 'right', 'up', 'down'))}</kbd></p>
+      <p><span>Смена цели</span><kbd>Q</kbd></p>
+      <p><span>Рывок</span><kbd>Shift / двойное направление</kbd></p>
+      <p><span>Техники</span><kbd>${esc(join(0, 's1', 's2', 's3', 's4'))}</kbd></p>
+      <p><span>Авторские приёмы</span><kbd>Shift + 1–6</kbd></p>
+      <p><span>Пауза</span><kbd>Esc</kbd></p>
+    </div><p class="help-note">В РТ нет обычного автоогня: урон наносят техники и созданные приёмы. Уклонения вблизи пуль пополняют шкалу АТАКИ и ускоряют откат первого приёма. Клавиши Q, Shift, Esc и Shift + 1–6 пока фиксированы.</p>`;
+  };
+
+  App.help = function() {
+    if (['fight', 'rt'].includes(this.screen) && Fight.g?.mode !== 'online') {
+      this.paused = true;
+      AudioSys.pause();
+    }
+    this.modalBox('Как играть', controlHelp(), true);
+  };
+
+  const originalSelect = App.drawSelect.bind(App);
+  App.drawSelect = function() {
+    originalSelect();
+    const controls = document.querySelector('.select-footer .control-hint');
+    if (controls) controls.innerHTML = `<kbd>${esc(key(0, 'left'))}</kbd><kbd>${esc(key(0, 'right'))}</kbd> движение · <kbd>${esc(key(0, 'up'))}</kbd> прыжок · <kbd>${esc(key(0, 'block'))}</kbd> блок<br><kbd>${esc(key(0, 'punch'))}</kbd><kbd>${esc(key(0, 'kick'))}</kbd> удары · <kbd>${esc(join(0, 's1', 's2', 's3', 's4'))}</kbd> техники`;
+    const rtDifficulty = [...document.querySelectorAll('.settings-grid .field')]
+      .find(field => field.querySelector('label')?.textContent.includes('СЛОЖНОСТЬ РТ'));
+    if (rtDifficulty && !(this.config.mode === 'cpu' && this.config.p2 === 'araya')) rtDifficulty.remove();
+    for (const side of [0, 1]) {
+      const id = this.config[`p${side + 1}`];
+      const hp = this.config.rules.includes('last_chance') ? 1 :
+        char(id).hp * (this.config.rules.includes('half_hp') ? .5 : 1);
+      const card = document.querySelector(`.char-card[onclick="App.pickChar('${id}')"] .cc-copy small`);
+      if (card) card.textContent = `${hp} HP / ${char(id).pe} ПЭ`;
+    }
+    const fighterInfo = document.querySelector('.select-info .stats b');
+    if (fighterInfo) fighterInfo.textContent = this.config.rules.includes('last_chance') ? 1 :
+      char(this.config[`p${this.selectionSide + 1}`]).hp * (this.config.rules.includes('half_hp') ? .5 : 1);
+  };
+
+  const originalGameUI = App.gameUI.bind(App);
+  App.gameUI = function(rt = false) {
+    originalGameUI(rt);
+    const controls = document.querySelector('.combat-footer .control-hint');
+    if (controls) controls.innerHTML = rt ?
+      `${esc(join(0, 'left', 'right', 'up', 'down'))} · движение<br>Q · цель &nbsp; Shift · рывок &nbsp; ${esc(join(0, 's1', 's2', 's3', 's4'))} · техники` :
+      `${esc(join(0, 'punch', 'kick'))} · удары &nbsp; ${esc(key(0, 'block'))} · блок &nbsp; ${esc(key(0, 'throw'))} · бросок<br>Shift + 1…6 · свои приёмы`;
+    if (rt) {
+      document.querySelector('[data-act="fire"]')?.remove();
+    }
+  };
+
+  const originalHome = App.home.bind(App);
+  App.home = function() {
+    if (this._builderTrial && this.screen === 'fight' && Fight.g?.mode === 'training') {
+      this._builderTrial = false;
+      Builder.open(Builder.hero);
+      return;
+    }
+    this._builderTrial = false;
+    originalHome();
+    document.querySelector('#homeArt')?.remove();
+    document.querySelector('.hero-number')?.remove();
+  };
+
+  const originalBuilderTest = Builder.test.bind(Builder);
+  Builder.test = function() {
+    originalBuilderTest();
+    if (App.screen === 'fight' && Fight.g?.mode === 'training') App._builderTrial = true;
+  };
+
+  // The original core generated one ostinato at three tempos. These are
+  // different melodic/rhythmic arrangements, plus a true silent selection.
+  AudioSys.tick = function(dt) {
+    if (this.custom) { this.custom.volume = Pref.master * Pref.music; return; }
+    if (Pref.style === 'off' || Pref.music <= 0) return;
+    this.clock -= dt;
+    if (this.clock > 0) return;
+    const tracks = {
+      forge: {bpm: 118, root: 65.4, melody: [0, 0, 7, 10, 0, 3, 7, 12], type: 'triangle'},
+      blood: {bpm: 142, root: 55, melody: [0, 3, 0, -2, 7, 6, 3, -5, 0, 12, 10, 7, 3, 0, -2, -5], type: 'sawtooth'},
+      moon: {bpm: 78, root: 98, melody: [0, 7, 12, 9, 5, 12, 7, 2, 0, 4, 9, 12], type: 'sine'}
+    };
+    const track = tracks[Pref.style] || tracks.forge;
+    this.clock = 60 / track.bpm / (Pref.style === 'moon' ? 1 : 2);
+    const beat = this.beat++;
+    const note = track.melody[beat % track.melody.length];
+    this.tone(track.root * 2 ** (note / 12), Pref.style === 'moon' ? .62 : .24, track.type, .09, true);
+    if (Pref.style === 'blood' && beat % 4 === 0) {
+      this.tone(track.root * .5, .38, 'sawtooth', .11, true);
+      this.tone(track.root * 2, .055, 'square', .035, true);
+    } else if (Pref.style === 'forge' && beat % 2 === 0) {
+      this.tone(track.root * .5, .18, 'sine', .17, true);
+    } else if (Pref.style === 'moon' && beat % 3 === 0) {
+      this.tone(track.root * .75, .88, 'sine', .055, true);
+    }
+  };
+  AudioSys.clearCustom = function() {
+    if (this.custom) { this.custom.pause(); this.custom.removeAttribute('src'); this.custom.load(); }
+    if (this.customURL) URL.revokeObjectURL(this.customURL);
+    this.customURL = null;
+    this.custom = null;
+    this.clock = 0;
+    this.beat = 0;
+    toast('Своя музыка убрана');
+  };
+  const originalLoadMusic = AudioSys.load.bind(AudioSys);
+  AudioSys.load = function(file) {
+    this.custom?.pause();
+    return originalLoadMusic(file);
+  };
+  // The original preferences validator predates the silent option.
+  if (readStore('clash-pref-v9', {}).style === 'off') Pref.style = 'off';
+  const originalSettings = App.settings.bind(App);
+  App.settings = function(tab) {
+    originalSettings(tab);
+    if (tab === 'keys') return;
+    const musicSelect = [...document.querySelectorAll('#modalRoot select')]
+      .find(sel => [...sel.options].some(option => option.value === 'forge'));
+    if (musicSelect) {
+      const names = {forge: 'Кузница · ритмическая', blood: 'Кровь · напряжённая', moon: 'Луна · атмосферная'};
+      for (const option of musicSelect.options) option.textContent = names[option.value] || option.textContent;
+      const silence = document.createElement('option');
+      silence.value = 'off'; silence.textContent = 'Ничего · без музыки';
+      musicSelect.append(silence);
+      musicSelect.value = Pref.style;
+    }
+    const customInput = document.querySelector('#modalRoot input[type="file"][accept="audio/*"]');
+    if (customInput) {
+      const button = document.createElement('button');
+      button.textContent = 'Убрать свою музыку';
+      button.className = 'ghost';
+      button.style.marginTop = '8px';
+      button.disabled = !AudioSys.custom;
+      button.addEventListener('click', () => { AudioSys.clearCustom(); button.disabled = true; customInput.value = ''; });
+      customInput.addEventListener('change', () => { if (customInput.files?.length) button.disabled = false; });
+      customInput.closest('label')?.after(button);
+    }
+    document.querySelector('#modalRoot input[onchange*="Pref.autoFire"]')?.closest('label')?.remove();
+  };
+
+  const originalRTSelect = App.rtSelect.bind(App);
+  App.rtSelect = function() {
+    originalRTSelect();
+    const explanation = document.querySelector('#modalRoot p.muted');
+    if (explanation) explanation.textContent = 'Три фазы: флот, эскорт и разрушаемые узлы. Применяй техники своего персонажа, переключай цели и уклоняйся от залпов.';
+    const notes = document.querySelector('#modalRoot .hintbox');
+    if (notes) notes.textContent = `${join(0, 'left', 'right', 'up', 'down')} — движение · Q — цель · Shift или двойное направление — рывок. Приёмы ${join(0, 's1', 's2', 's3', 's4')} наносят урон. Обычная стрельба отключена.`;
+  };
+
+  // Track PE spent at the moment it is actually consumed, across all skill types.
+  function trackEnergy(actor, record, state) {
+    let pe = actor.pe;
+    Object.defineProperty(actor, 'pe', {
+      configurable: true, enumerable: true,
+      get() { return pe; },
+      set(next) {
+        if (!Number.isFinite(next)) return;
+        if (next < pe && state()) record(pe - next);
+        pe = next;
+      }
+    });
+  }
+  const originalMakeF = Fight.makeF.bind(Fight);
+  Fight.makeF = function(id, side) {
+    const f = originalMakeF(id, side);
+    if (side === 0) trackEnergy(f, used => {
+      this.g.stats.peSpent = (this.g.stats.peSpent || 0) + used;
+    }, () => this.g?.state === 'active' && !Cheats.energy);
+    return f;
+  };
+
+  const originalKO = Fight.ko.bind(Fight);
+  Fight.ko = function(winner, skip = false) {
+    originalKO(winner, skip);
+    const g = this.g;
+    if (!skip && g.state === 'ko' && winner !== null && ['cpu', 'arcade', 'survival'].includes(g.mode)) {
+      this.finisher();
+    } else if (!skip && g.state === 'ko' && winner !== null) {
+      App.announce('НОКАУТ', `${g.f[winner].c.name} · ${key(winner, 'finish')} — добивание`);
+    }
+  };
+
+  const originalRecord = Fight.record.bind(Fight);
+  Fight.record = function() {
+    originalRecord();
+    if (this.g?.training?.recording)
+      toast(`5 секунд записи манекена: клавиши игрока 2 — ${join(1, 'left', 'right', 'up', 'down', 'punch', 'kick')}`);
+  };
+
+  const originalAttack = Fight.attack.bind(Fight);
+  Fight.attack = function(f, kind) {
+    if (kind !== 'throw') return originalAttack(f, kind);
+    if (f.stun > 0 || f.recovery > 0 || f.flying) return;
+    const enemy = this.g.f[1 - f.side];
+    const dx = enemy.x - f.x;
+    if (Math.abs(dx) <= 115 && Math.abs(enemy.y - f.y) <= 65) {
+      f.face = Math.sign(dx) || f.face;
+      f.x += f.face * Math.min(22, Math.max(0, Math.abs(dx) - 44));
+      const landed = this.damage(enemy, 14, f, {unblockable: true, kb: 270, stun: .24});
+      f.recovery = .64; f.pose = .42;
+      if (landed) { enemy.kx = f.face * 340; this.float('БРОСОК', enemy.x, enemy.y - 124, '#ffdaa3'); }
+      else this.float('УКЛОНЕНИЕ', enemy.x, enemy.y - 112, '#b2cada');
+      return;
+    }
+    f.pose = .22; f.recovery = .27;
+    this.float('МИМО', f.x, f.y - 119, '#b2cada');
+  };
+
+  // After the final round the result screen is no longer an active battle.
+  const originalResult = App.result.bind(App);
+  App.result = function(title, sub, stats, action) {
+    const fight = this.screen === 'fight' ? Fight.g : null;
+    const rt = this.screen === 'rt' ? RT.g : null;
+    const lived = fight?.t ?? rt?.t ?? 0;
+    if (fight || rt) {
+      const damage = fight?.stats.damage ?? rt?.damage ?? 0;
+      const spent = fight?.stats.peSpent ?? rt?.peSpent ?? 0;
+      stats += ` · Нанесено ${Math.round(damage)} урона · Время ${Math.round(lived)} с · Потрачено ${Math.round(spent)} ПЭ`;
+    }
+    originalResult(title, sub, stats, action);
+    this.screen = 'result';
+    this.paused = true;
+  };
+  const originalCloseModal = App.closeModal.bind(App);
+  App.closeModal = function() {
+    if (this.screen === 'result') { this.home(); return; }
+    originalCloseModal();
+  };
+})();
+
+</script>
+<script>
+'use strict';
+
+(() => {
+  // The templates are interpretations of established moves, not copies of
+  // another fighter's complete technique or a way to bypass their palette.
+  const TEMPLATES = Object.freeze([
+    {id:'lapis_rail', name:'Ляпис · рельсотрон', type:'projectile', form:'rail', power:5, range:5, size:1, count:1},
+    {id:'caesar_bubble', name:'Цезарь · пузырьковая пушка', type:'projectile', form:'bubble', power:3, range:4, size:3, count:2},
+    {id:'akira_blood', name:'Акира · кровавый поток', type:'projectile', form:'blood', power:3, range:4, size:2, count:2},
+    {id:'araya_cannon', name:'Арая · залп пушек', type:'projectile', form:'cannon', power:3, range:4, size:2, count:3},
+    {id:'airi_spike', name:'Айри · металлические шипы', type:'projectile', form:'spike', power:3, range:4, size:2, count:3},
+    {id:'chieko_tornado', name:'Чиэко · торнадо', type:'projectile', form:'tornado', power:2, range:3, size:4, count:1},
+    {id:'kisei_ankh', name:'Кисей · огненный анх', type:'projectile', form:'ankh', power:3, range:4, size:2, count:1},
+    {id:'sonic_clones', name:'Соник · клоны', type:'summon', form:'clone', power:3, range:2, size:2, duration:4, count:1},
+    {id:'mechamaru_robot', name:'Мехамару · кукла', type:'summon', form:'robot', power:3, range:2, size:3, duration:4, count:1},
+    {id:'david_trap', name:'Дэвид · токсичная среда', type:'field', form:'toxic', power:3, range:3, size:3, duration:4, count:1},
+    {id:'yuzuha_vine', name:'Юзуха · щупальце', type:'pulse', form:'tentacle', power:4, range:2, size:3, count:1},
+    {id:'kayano_meteor', name:'Каяно · метеор-комбинация', type:'pulse', form:'meteor', power:5, range:2, size:2, count:1}
+  ]);
+  const FORMS_BY_TYPE = Object.freeze({
+    projectile: {generic:'Обычный',rail:'Рельсотрон',bubble:'Пузырь',blood:'Кровь',cannon:'Ядро',spike:'Металлический шип',tornado:'Торнадо',ankh:'Огненный анх'},
+    pulse: {generic:'Импульс',tentacle:'Щупальце',meteor:'Метеор',wave:'Волна'},
+    field: {generic:'Поле',toxic:'Токсичная зона',blood:'Кровавое поле'},
+    summon: {generic:'Призыв',clone:'Клон',robot:'Механическая кукла'},
+    shield: {generic:'Барьер',metal:'Металлический щит'},
+    orbit: {generic:'Орбиты',metal:'Металлические орбиты'},
+    dash: {generic:'Рывок',sonic:'Сверхскоростной рывок'},
+    heal: {generic:'Лечение'}
+  });
+  FORMS.clone = 'Клон Соника';
+  FORMS.robot = 'Кукла Мехамару';
+  const originalNormalize = Builder.normalize.bind(Builder);
+  Builder.normalize = function(character, move) {
+    const result = originalNormalize(character, move);
+    if (!result) return null;
+    const sortedSteps = [...move.steps].sort((a, b) => (a.at || 0) - (b.at || 0));
+    result.steps.forEach((step, index) => {
+      const requested = sortedSteps[index]?.form;
+      if (step.type === 'summon' && character.id === 'kisei' && Object.hasOwn(FORMS, requested)) {
+        step.form = requested;
+      } else if (Object.hasOwn(FORMS_BY_TYPE[step.type] || {}, requested)) {
+        step.form = requested;
+      }
+    });
+    return result;
+  };
+
+  Builder.applyTemplate = function(id) {
+    const source = TEMPLATES.find(template => template.id === id);
+    if (!source || !char(this.hero).palette.split(' ').includes(source.type)) {
+      toast('Эта форма недоступна технике выбранного персонажа');
+      return;
+    }
+    this.name = source.name;
+    this.steps = [{type:source.type,at:0,power:source.power,range:source.range ?? 1,
+      size:source.size ?? 1,duration:source.duration ?? 1,count:source.count ?? 1,
+      aim:'forward',condition:'always',form:source.form}];
+    // Power budget and PE limitations still apply to the selected fighter.
+    while (this.price(char(this.hero), this.steps).budget > 70 ||
+           this.price(char(this.hero), this.steps).cost > char(this.hero).pe) {
+      const step = this.steps[0];
+      if (step.count > 1) step.count--;
+      else if (step.power > 1) step.power--;
+      else if (step.range > 1) step.range--;
+      else { toast('Этот образец слишком дорог для персонажа'); return; }
+    }
+    this.draw();
+    toast('Образец загружен: параметры можно изменить');
+  };
+
+  const originalDraw = Builder.draw.bind(Builder);
+  Builder.draw = function() {
+    originalDraw();
+    const steps = document.querySelector('#steps');
+    if (!steps) return;
+    const available = TEMPLATES.filter(template => char(this.hero).palette.split(' ').includes(template.type));
+    const section = document.createElement('div');
+    section.className = 'field';
+    section.innerHTML = `<label>ОБРАЗЦЫ ПРИЁМОВ ДРУГИХ ПЕРСОНАЖЕЙ</label>
+      <div class="row"><select id="move-template-picker" aria-label="Выбери образец">
+      ${available.map(template => `<option value="${template.id}">${esc(template.name)}</option>`).join('')}
+      </select><button type="button" class="ghost" id="apply-move-template">Применить</button></div>
+      <small>Форма и базовые параметры сохраняют ограничения мощности и палитры.</small>`;
+    steps.before(section);
+    section.querySelector('#apply-move-template').addEventListener('click', () =>
+      this.applyTemplate(section.querySelector('#move-template-picker').value));
+
+    [...steps.querySelectorAll('.step-card')].forEach((card, index) => {
+      const step = this.steps[index], styles = FORMS_BY_TYPE[step.type];
+      if (!styles || (step.type === 'summon' && this.hero === 'kisei')) return;
+      const field = document.createElement('div');
+      field.className = 'field visual-form';
+      field.innerHTML = `<label>Форма готового приёма</label><select aria-label="Форма приёма">
+        ${Object.entries(styles).map(([id, name]) => `<option value="${id}" ${step.form === id ? 'selected' : ''}>${esc(name)}</option>`).join('')}
+      </select>`;
+      card.append(field);
+      field.querySelector('select').addEventListener('change', event => this.change(index, 'form', event.target.value));
+    });
+  };
+
+  // Apply the authored appearance to all immediate primitive effect calls.
+  const originalProjectile = Fight.projectile.bind(Fight);
+  Fight.projectile = function(f, data = {}) {
+    const shape = this._customForm;
+    if (!shape || shape === 'generic') return originalProjectile(f, data);
+    const modified = {...data, shape};
+    if (shape === 'rail') {
+      modified.vx = (data.vx ?? f.face * 540) * 1.45;
+      modified.r = Math.min(data.r ?? 10, 8);
+    }
+    if (shape === 'spike') modified.r = Math.max(9, data.r || 9);
+    if (shape === 'blood') modified.bleed = 3 + (data.dmg || 0) * .12;
+    if (shape === 'tornado') modified.stun = .5;
+    if (shape === 'ankh') modified.burn = true;
+    if (shape === 'bubble') modified.kb = 190;
+    if (shape === 'cannon') modified.kb = 260;
+    return originalProjectile(f, modified);
+  };
+  const originalArea = Fight.area.bind(Fight);
+  Fight.area = function(f, data = {}) {
+    return originalArea(f, this._customForm && this._customForm !== 'generic' ? {...data, shape:this._customForm} : data);
+  };
+  const originalSummon = Fight.summon.bind(Fight);
+  Fight.summon = function(f, data = {}) {
+    return originalSummon(f, ['clone','robot'].includes(this._customForm) ? {...data, shape:this._customForm} : data);
+  };
+  const originalEntity = Fight.entity.bind(Fight);
+  Fight.entity = function(f, data) {
+    if (this._customForm && this._customForm !== 'generic' && data.kind === 'trap') {
+      const modified = {...data, shape:this._customForm};
+      if (this._customForm === 'toxic') modified.poison = true;
+      if (this._customForm === 'blood') modified.bleed = 4;
+      return originalEntity(f, modified);
+    }
+    return originalEntity(f, data);
+  };
+
+  const originalDrawEntity = Fight.drawEntity.bind(Fight);
+  Fight.drawEntity = function(ctx, entity) {
+    originalDrawEntity(ctx, entity);
+    const kind = entity.shape;
+    if (!['blood','cannon','toxic','meteor'].includes(kind)) return;
+    ctx.save();
+    const x = entity.x, y = entity.y, r = entity.r || 15;
+    if (kind === 'blood') {
+      ctx.strokeStyle = '#ec516f'; ctx.lineWidth = Math.max(3, r * .5);
+      ctx.beginPath(); ctx.moveTo(x - (entity.vx || 0) * .032, y + 2);
+      ctx.quadraticCurveTo(x - r, y - r * .45, x, y); ctx.stroke();
+    } else if (kind === 'cannon') {
+      ctx.fillStyle = '#343943'; ctx.strokeStyle = '#f4ce95'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, Math.min(22, r), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    } else if (kind === 'toxic') {
+      ctx.fillStyle = '#b1e27b55'; ctx.strokeStyle = '#cef49f'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(x, y, r, Math.max(6, r * .15), 0, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+    } else if (kind === 'meteor') {
+      ctx.strokeStyle = '#ffd080'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(x, y, r * .65, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  const originalCustomStep = Fight.customStep.bind(Fight);
+  Fight.customStep = function(f, step) {
+    const power = 1 + (step.power - 1) * 1.75;
+    const range = 1 + (step.range - 1) * 1.4;
+    const boosted = {...step, power, range};
+    if (step.type === 'dash') {
+      // Velocity is exponentially damped (9 / s) by the physics engine;
+      // the old 700 px/s maximum yielded <80 px of extra travel.
+      const impulse = 480 + range * 255 + power * 105;
+      f.kx = f.face * impulse;
+      f.st.inv = Math.max(f.st.inv || 0, .12 + step.power * .045);
+      this.spark(f.x, f.y - 52, f.c.color, 15);
+      return;
+    }
+    if (step.type === 'summon' && f.id === 'kisei' && ['clone','robot'].includes(step.form)) {
+      this.summon(f, {life:1 + step.duration, hp:6 + power * 5,
+        shape:step.form, dmg:2 + power});
+      return;
+    }
+    this._customForm = step.form || 'generic';
+    try {
+      if (step.type === 'projectile' && step.form === 'spike') {
+        const count = step.count || 1;
+        for (let i = 0; i < count; i++) this.projectile(f, {
+          x:f.x + f.face * 44, y:f.y - 24 - i * 25,
+          vx:f.face * (480 + range * 68), dmg:5 + power * 3,
+          r:8 + step.size * 2, level:i===0?'low':'high', life:1.8
+        });
+      } else originalCustomStep(f, boosted);
+    } finally {
+      this._customForm = null;
+    }
+  };
+
+  function beginSpecial(f, index, engine) {
+    const skill = f.c.skills[index];
+    if (!skill || !engine.canCast(f, index, skill.cost)) return false;
+    if (!engine.rule('unlimited_pe') && !engine.cheat(f, 'energy')) f.pe -= skill.cost;
+    f.cd[index] = skill.cd * (engine.rule('quick_skills') ? .5 : 1);
+    f.pose = .35;
+    AudioSys.sfx('cast');
+    engine.spark(f.x, f.y - 52, f.c.color, 12);
+    return true;
+  }
+
+  const originalCast = Fight.cast.bind(Fight);
+  Fight.cast = function(f, index) {
+    if (f.id === 'airi' && index === 2) {
+      if (!beginSpecial(f, index, this)) return false;
+      f.recovery = .42;
+      // Three steel spikes originate at Airi, not at the opponent's feet.
+      for (let height = 0; height < 3; height++) {
+        const h = height;
+        this.queue(f, height * .12, () => this.projectile(f, {
+          x:f.x + f.face * 48, y:f.y - 23 - h * 26,
+          vx:f.face * 680, dmg:12, r:13, life:2,
+          shape:'spike', level:h===0?'low':'high', kb:135
+        }), true);
+      }
+      return true;
+    }
+    if (f.id === 'kayano' && index === 0) {
+      if (!beginSpecial(f, index, this)) return false;
+      const comboPower = clamp(1 + f.comboPoints * .35, 1, 2.75);
+      f.recovery = 1.15;
+      for (let hit = 0; hit < 5; hit++) this.queue(f, .09 + hit * .17, () => {
+        const enemy = this.g.f[1 - f.side], distance = enemy.x - f.x;
+        f.face = Math.sign(distance) || f.face;
+        if (Math.abs(distance) > 185 || Math.abs(enemy.y - f.y) > 90) return;
+        f.x = clamp(f.x + f.face * Math.min(30, Math.max(0, Math.abs(distance) - 47)), 28, 1072);
+        f.pose = .18;
+        this.area(f, {x:f.x + f.face * 52, y:f.y - 53, r:70,
+          dmg:5 * comboPower, kb:hit === 4 ? 270 : 45, life:.14, shape:'meteor'});
+        this.spark(f.x + f.face * 55, f.y - 53, f.c.color, 6);
+      }, true);
+      return true;
+    }
+    const success = originalCast(f, index);
+    if (success && this.g.mode === 'cpu' && f.side === 1 && f.id === 'david') {
+      f.cd[index] *= 1.55; // No hidden fast-cooldown advantage for David's AI.
+      f.aiTimer = Math.max(f.aiTimer, .6);
+    }
+    return success;
+  };
+
+  // Advancing an arcade/survival stage should dismiss the result without
+  // invoking the result screen's 'X means return to menu' behavior.
+  const originalNextStage = Fight.nextStage.bind(Fight);
+  Fight.nextStage = function() {
+    if (App.screen === 'result') App.screen = 'fight';
+    return originalNextStage();
+  };
+
+  window.ClashMoveTemplates = TEMPLATES;
+})();
+
+</script>
+<script>
+'use strict';
+
+(() => {
+  // Standard shots formerly made the player a generic gunship. Every call
+  // with explicit damage/parameters is an actual hero or authored technique.
+  const shootTechnique = RT.shoot.bind(RT);
+  RT.shoot = function(...args) {
+    if (args.length === 0) return; // Remove automatic / Space gunfire.
+    return shootTechnique(...args);
+  };
+
+  // Boss durability was balanced for ~15 free shots/s. With only techniques,
+  // damage must be appreciably higher to keep all three phases winnable.
+  const originalHitTarget = RT.hitTarget.bind(RT);
+  RT.hitTarget = function(target, amount) {
+    return originalHitTarget(target, amount * 2.35);
+  };
+
+  function trackRTPE(g) {
+    let pe = g.pe;
+    Object.defineProperty(g, 'pe', {
+      configurable: true, enumerable: true,
+      get() { return pe; },
+      set(next) {
+        if (!Number.isFinite(next)) return;
+        if (next < pe && g.state === 'active' && !Cheats.energy)
+          g.peSpent += pe - next;
+        pe = next;
+      }
+    });
+  }
+
+  const originalStart = RT.start.bind(RT);
+  RT.start = function(...args) {
+    originalStart(...args);
+    if (this.g) {
+      this.g.visualTraces = [];
+      this.g.peSpent = 0;
+      trackRTPE(this.g);
+    }
+  };
+
+  // Skill damage is dealt by the character's ability, and the trajectory is
+  // visibly communicated instead of being an invisible instant HP change.
+  const originalCast = RT.cast.bind(RT);
+  RT.cast = function(index) {
+    const g = this.g, skill = g?.c.skills[index];
+    if (!g || !skill || skill.passive || g.state !== 'active' || g.phaseWait > 0 || g.cd[index] > 0) return;
+    const revolverOn = g.c.id === 'kisei' && index === 3 &&
+      g.activeAbilities?.some(effect => effect.kind === 'revolver' && effect.life > 0);
+    if (g.pe < (revolverOn ? 4 : skill.cost) && !Cheats.energy) return;
+    const target = this.target();
+    originalCast(index);
+    g.visualTraces ??= [];
+    if (g.c.id === 'lapis' && index === 1 && target) {
+      g.visualTraces.push({kind:'rail',targetId:target.id,x:g.x,y:g.y,
+        toX:target.x,toY:target.y,expires:g.t+.31,started:g.t,color:'#bceffc'});
+      this.spark(target.x, target.y, '#dcfaff', 24);
+    }
+    if (g.c.id === 'akira' && index <= 1 && target) {
+      g.visualTraces.push({kind:'blood',targetId:target.id,x:g.x,y:g.y,
+        toX:target.x,toY:target.y,expires:g.t+(index===0?2.1:.5),started:g.t,color:'#fb5a7b'});
+      this.spark(g.x, g.y, '#df4166', 12);
+    }
+  };
+
+  const originalStep = RT.step.bind(RT);
+  RT.step = function(dt) {
+    originalStep(dt);
+    const g = this.g;
+    if (!g) return;
+    g.visualTraces = (g.visualTraces || []).filter(trace => trace.expires > g.t);
+    if (g.state !== 'active' || App.paused) return;
+    // Sonic's self-accelerating technique previously only made free gunfire
+    // faster; after removing basic shots it now increases mobility directly.
+    if (g.activeAbilities?.some(effect => effect.kind === 'speed' && effect.life > 0)) {
+      g.x = clamp(g.x + g.dx * dt * 160, 24, 936);
+      g.y = clamp(g.y + g.dy * dt * 160, 110, 572);
+    }
+  };
+
+  const originalDraw = RT.draw.bind(RT);
+  RT.draw = function() {
+    originalDraw();
+    const g = this.g, ctx = App.ctx;
+    if (!g || !ctx || !g.visualTraces?.length) return;
+    ctx.save();
+    for (const trace of g.visualTraces) {
+      const target = g.targets.find(t => t.id === trace.targetId && t.hp > 0);
+      const endX = target?.x ?? trace.toX;
+      const endY = target?.y ?? trace.toY;
+      const remaining = Math.max(0, trace.expires - g.t);
+      const life = trace.expires - trace.started;
+      ctx.globalAlpha = Math.min(1, remaining / .2);
+      if (trace.kind === 'rail') {
+        ctx.strokeStyle = '#bceffc'; ctx.lineWidth = 12 * remaining / life + 2;
+        ctx.shadowColor = '#71dbff'; ctx.shadowBlur = 24;
+        ctx.beginPath(); ctx.moveTo(trace.x, trace.y); ctx.lineTo(endX, endY); ctx.stroke();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(trace.x, trace.y); ctx.lineTo(endX, endY); ctx.stroke();
+      } else if (trace.kind === 'blood') {
+        ctx.shadowColor = '#ff335a'; ctx.shadowBlur = 12; ctx.strokeStyle = '#d63f62';
+        ctx.lineWidth = 6 + Math.sin(g.t * 22) * 2;
+        ctx.beginPath(); ctx.moveTo(g.x, g.y);
+        const bend = Math.sin(g.t * 10) * 35;
+        ctx.bezierCurveTo((g.x + endX) / 2, g.y + bend,
+          (g.x + endX) / 2, endY - bend, endX, endY);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  };
+
+  const originalPhase = RT.phase.bind(RT);
+  RT.phase = function(...args) {
+    originalPhase(...args);
+    if (this.g) this.g.visualTraces = [];
+  };
+
+  const originalReturn = RT.returnResult.bind(RT);
+  RT.returnResult = function(won) {
+    const g = this.g;
+    if (g && !g.test && Fight.g?.stats) {
+      Fight.g.stats.peSpent = (Fight.g.stats.peSpent || 0) + (g.peSpent || 0);
+      Fight.g.stats.damage += g.damage || 0;
+      Fight.g.t += g.t;
+    }
+    originalReturn(won);
+  };
+
+  const originalCustomStep = RT.customStep.bind(RT);
+  RT.customStep = function(step) {
+    return originalCustomStep({...step,
+      power:1 + (step.power - 1) * 1.75,
+      range:1 + (step.range - 1) * 1.4});
+  };
+})();
+
+</script>
+<script>
 let lastFrame=0,accumulator=0,hudClock=0;
 function frame(ms){const dt=Math.min(.1,Math.max(0,(ms-lastFrame)/1000||0));lastFrame=ms;App.homeTime+=dt;accumulator+=dt;let count=0;while(accumulator>=1/60&&count<5){if(App.screen==='fight')Fight.step(1/60);else if(App.screen==='rt')RT.step(1/60);if(!App.paused&&!document.hidden)AudioSys.tick(1/60);Input.end();accumulator-=1/60;count++}if(count===5)accumulator=0;if(App.screen==='home')homeDraw(dt);else if(App.screen==='fight')Fight.draw();else if(App.screen==='rt')RT.draw();requestAnimationFrame(frame)}
 // Read-only diagnostics for local verification and save-file compatibility.
-window.Clash={App,Fight,RT,Builder,Net,CHARS,RULES,Input,Cheats,version:'1.0.0-theseus'};
+window.Clash={App,Fight,RT,Builder,Net,CHARS,RULES,Input,Cheats,version:'2.0.0-theseus'};
 App.home();requestAnimationFrame(frame);
 
 </script>
