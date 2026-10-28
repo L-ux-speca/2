@@ -296,12 +296,12 @@ assert.equal(spriteFrame,80,'Animated sprites change frames without affecting fi
 assert.ok(evalGame("SpriteSystem.draw(fakeDraw,{...spriteTestFighter,c:{id:'lapis'},moving:true},3,1)"),
   'Unanimated movement retains the standing character artwork rather than reverting to the old model');
 
-// Four boss territories, three distinct genres and one unchanged naval RT.
-assert.equal(evalGame('RTBossCatalog.all().length'),4);
+// Seven boss territories, six custom encounters and one unchanged naval RT.
+assert.equal(evalGame('RTBossCatalog.all().length'),7);
 assert.equal(evalGame("RTBossCatalog.get('sonic').title"),'Погоня Онсоку');
 assert.ok(evalGame("typeof Encyclopedia.open==='function'"),'Encyclopedia is linked to the project');
 assert.ok(evalGame("!!ENCYCLOPEDIA_LORE.lapis"),'Lore can be edited without touching game code');
-assert.equal(evalGame('RTVariantPatterns.size'),3,'Only the three new bosses use the variant engine');
+assert.equal(evalGame('RTVariantPatterns.size'),6,'All six non-Araya territories use the variant engine');
 
 for(const boss of ['david','airi','sonic']){
   evalGame(`RTVariants.start('lapis','${boss}','easy',true);
@@ -317,6 +317,15 @@ for(const boss of ['david','airi','sonic']){
     'Genre warning resolves to gameplay hazards or targets');
   evalGame('Input.clear();RTVariants.step(1/60)');
   assert.ok(evalGame('RTVariants.g.hp')>0,'The first warning cannot immediately kill the hero');
+}
+
+for(const boss of ['yuzuha','caesar','lapis']){
+  evalGame(`RTVariants.start('lapis','${boss}','easy',true);RTVariants.g.state='active';RTVariants.g.phaseWait=0;`);
+  assert.equal(evalGame('RTVariants.g.bossId'),boss);
+  evalGame('RTVariants.genre().pattern(RTVariants)');
+  assert.ok(evalGame('RTVariants.g.warnings.length')>0,`${boss} creates attack telegraphs`);
+  evalGame('RTVariants.g.warnings.splice(0).forEach(w=>RTVariants.genre().trigger(RTVariants,w))');
+  assert.ok(evalGame('RTVariants.g.bullets.length+RTVariants.g.objects.length>0'),`${boss} creates hazards`);
 }
 
 evalGame("RTVariants.start('lapis','david','easy',true);RTVariants.g.state='active';RTVariants.g.phaseWait=0;");
@@ -438,4 +447,4 @@ assert.ok(evalGame('RT.g.warnings.length')>=2,
 
 assert.ok(allJs.includes('clean-home-menu')&&html.includes('interface-clean.css'),
   'Compact home screen and uniform portrait framing are loaded');
-console.log('PASS: 14 fighters, 20 aligned sprites, 4 RT bosses with 3 forms, expanded phase attacks and Lunatic directors, compact home screen, encyclopedia and modular content');
+console.log('PASS: 14 fighters, 20 aligned sprites, 7 RT bosses, 6 variant encounters, phase attacks, compact home screen, encyclopedia and modular content');
