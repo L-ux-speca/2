@@ -32,6 +32,13 @@ RTVariants.draw=function(){
         ctx.fillRect(0,w.safe+safeRadius,960,Math.max(0,548-w.safe-safeRadius));
         line(ctx,0,w.safe-safeRadius,960,w.safe-safeRadius,'#dafab4',2);
         line(ctx,0,w.safe+safeRadius,960,w.safe+safeRadius,'#dafab4',2);
+      }else if(w.type==='sweep'){
+        const ys=[190,300,410,520],gap=Math.round(w.safe/110)%4;
+        for(let i=0;i<ys.length;i++)if(i!==gap){ctx.fillStyle='#9ce78a55';ctx.fillRect(0,ys[i]-17,960,34);line(ctx,0,ys[i],960,ys[i],'#d8ffb1',3);}
+      }else if(w.type==='vent'){
+        for(const [x,y] of [[65,145],[690,145],[65,520],[690,520]]){circle(ctx,x,y,30,'#a6ed8a44',true,3);line(ctx,x-20,y,x+20,y,'#d8ffb1',3);line(ctx,x,y-20,x,y+20,'#d8ffb1',3);}
+      }else if(w.type==='boil'){
+        circle(ctx,480,330,210,'#b8f28b18',true,4);canvasText(ctx,'ДАВЛЕНИЕ РАСТЁТ',480,335,22,'#e0ffb8');
       }else{
         const a=w.angle;
         ctx.fillStyle='#9cfa9e77';ctx.beginPath();ctx.moveTo(w.x,w.y);
@@ -39,7 +46,15 @@ RTVariants.draw=function(){
       }
     }else if(g.bossId==='airi'){
       const safe=w.safe;
-      if(w.type==='clone'){
+      if(g.phase===3&&['gridCross','gridSweep','gridLock'].includes(w.type)){
+        const rows=[202,355,508],cols=[135,285,435],safeCell=w.safeCell??4;
+        for(let row=0;row<3;row++)for(let col=0;col<3;col++){
+          const cell=row*3+col;
+          const dangerous=w.type==='gridSweep'?row!==Math.floor(safeCell/3):w.type==='gridLock'?col!==safeCell%3:cell!==safeCell;
+          ctx.fillStyle=dangerous?'#ef8ba64a':'#83f0bb77';ctx.fillRect(cols[col]-62,rows[row]-52,124,104);
+          ctx.strokeStyle=dangerous?'#f3a1b9':'#a4f8cf';ctx.lineWidth=3;ctx.strokeRect(cols[col]-62,rows[row]-52,124,104);
+        }
+      }else if(w.type==='clone'){
         circle(ctx,759,[202,355,508][w.lane],48,'#f3d3ff55');
       }else for(let lane=0;lane<3;lane++)if(lane!==safe){
         const y=[202,355,508][lane];
@@ -50,7 +65,12 @@ RTVariants.draw=function(){
       const y=w.y||462;
       ctx.fillStyle='#f2a8aa66';ctx.fillRect(100,y-w.r-6,860,w.r*2+12);
       line(ctx,100,y-w.r-6,960,y-w.r-6,'#ffd4bd',2);
-      canvasText(ctx,['shuriken','razor','mirage'].includes(w.type)?'ПРИГНИСЬ':'ПРЫГНИ',770,y-44,14,'#fff1df');
+      const duck=['shuriken','razor','mirage','katanaHigh'].includes(w.type);
+      canvasText(ctx,duck?'ПРИСЕД':'ПРЫЖОК',770,y-44,14,'#fff1df');
+      if(['katana','katanaCombo','platformCut','katanaHigh'].includes(w.type)){
+        line(ctx,Math.max(690,(w.x||840)-95),y,960,y,'#d5f9ff',5);
+        canvasText(ctx,'КАТАНА',825,y-63,13,'#d9fbff');
+      }
     }
     ctx.restore();
   }
@@ -77,7 +97,9 @@ RTVariants.draw=function(){
     circle(ctx,s.x,s.y,Math.max(2,s.r*.6),'#ebfff0');
   }
   for(const b of g.bullets){
-    if(b.shape==='spike'){
+    if(b.shape==='gridcell'){
+      ctx.fillStyle=b.color+'aa';ctx.fillRect(b.x-43,b.y-43,86,86);ctx.strokeStyle='#f4d8ff';ctx.lineWidth=3;ctx.strokeRect(b.x-43,b.y-43,86,86);
+    }else if(b.shape==='spike'){
       ctx.save();ctx.translate(b.x,b.y);ctx.rotate(-Math.PI/2);
       poly(ctx,[[0,-18],[15,14],[-15,14]],b.color);ctx.restore();
     }else if(b.shape==='cube'){
