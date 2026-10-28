@@ -18,7 +18,10 @@ const RTBossCatalog=(()=>{
     {id:'airi',title:'Лабиринт фигур',genre:'Rhythm lanes · три дорожки',
      short:'Меняй высоту, уклоняйся от кубов и уничтожай клонов',hint:'W/S — смена дорожек · A/D — смещение · Shift — рывок · 1–4 — техники',accent:'#d7b1f3'},
     {id:'sonic',title:'Погоня Онсоку',genre:'Speed runner · погоня',
-     short:'Прыгай через ловушки, пригибайся под сюрикенами и догоняй врага',hint:'W — прыжок · S — присесть · A/D — скорость · Shift — рывок · 1–4 — техники',accent:'#f0ad91'}
+     short:'Прыгай через ловушки, пригибайся под сюрикенами и догоняй врага',hint:'W — прыжок · S — присесть · A/D — скорость · Shift — рывок · 1–4 — техники',accent:'#f0ad91'},
+    {id:'yuzuha',title:'Воронка Изумрудного прилива',genre:'Survival platformer · меняющаяся арена',short:'Используй булыжники, избегай щупальца и двигайся по кольцам вокруг воронки',hint:'WASD — движение · E — поднять/бросить булыжник · Shift — рывок · 1–4 — техники',accent:'#63e0a3'},
+    {id:'caesar',title:'Пузырьковый лабиринт',genre:'Maze escape · преследование',short:'Найди выход из меняющегося лабиринта, избегая пузырей и перекрёстного огня',hint:'WASD — движение · Shift — рывок · 1–4 — техники',accent:'#87e5ff'},
+    {id:'lapis',title:'Лоренцев контур',genre:'Arena boss fight · контроль дистанции',short:'Приближайся к Ляпису, переживая рельсотрон, магнитные поля и ближние дэши',hint:'WASD — движение · Shift — рывок · 1–4 — техники',accent:'#9edfff'}
   ].forEach(register);
   return Object.freeze({register,get:id=>bosses.get(id)||null,has:id=>bosses.has(id),all:()=>[...bosses.values()]});
 })();
