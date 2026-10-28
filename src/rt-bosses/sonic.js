@@ -7,7 +7,7 @@ RTVariants.register('sonic',{
     const g=rt.g;
     g.formName=['','НЕУЛОВИМЫЙ БЕГУН','АРМИЯ СКОРОСТИ','ЗАПРЕДЕЛЬНЫЙ ОНСОКУ'][n];
     g.patternCount=0;g.patternTimer=n===1?1.45:g.hard?1.1:1.7;
-    if(n===3){g.chase=Math.max(g.chase,42);g.platforms=[{x:145,w:155,y:405,id:0},{x:355,w:150,y:350,id:1},{x:565,w:155,y:395,id:2}];g.platformGround=null;g.bossMoveDir=-1;g.bossSlashTimer=0;}
+    if(n===3){g.chase=Math.max(g.chase,42);g.platforms=[{x:92,w:190,y:408,id:1},{x:350,w:190,y:318,id:2},{x:620,w:220,y:228,id:3}];g.platformGround=null;g.bossMoveDir=-1;g.bossSlashTimer=0;g.bossLane=0;}
   },
   move(rt,dt,mx){
     const g=rt.g;
@@ -16,16 +16,16 @@ RTVariants.register('sonic',{
     }
     g.crouch=g.grounded&&(Input.has(0,'down')||Input.touchHeld.has('down'));
     if(g.dashTime<=0)g.x+=mx*(g.crouch?145:g.hard?295:280)*dt;
-    g.x=clamp(g.x,110,702);
+    g.x=clamp(g.x,110,g.phase===3?860:702);
     if(g.grounded&&g.platformGround!==null&&g.platforms){
       const p=g.platforms.find(p=>p.id===g.platformGround);
-      if(p&&g.x>=p.x-8&&g.x<=p.x+p.w+8)g.y=p.y-18;
+      if(p&&g.x>=p.x-8&&g.x<=p.x+p.w+8)g.y=p.y-46;
       else{g.grounded=false;g.platformGround=null;}
     }else if(g.grounded)g.y=462;
     if(!g.grounded){
       const prevY=g.y;g.jumpVy+=1640*dt;g.y+=g.jumpVy*dt;
       if(g.phase===3&&g.jumpVy>0&&g.platforms){
-        for(const p of g.platforms){const landingY=p.y-18;
+        for(const p of g.platforms){const landingY=p.y-46;
           if(g.x>=p.x-12&&g.x<=p.x+p.w+12&&prevY<=landingY&&g.y>=landingY){g.y=landingY;g.jumpVy=0;g.grounded=true;g.platformGround=p.id;break;}
         }
       }
@@ -38,7 +38,11 @@ RTVariants.register('sonic',{
     if(g.phase===3){
       g.bossX=(g.bossX||835)+(g.bossMoveDir||-1)*(g.hard?245:205)*dt;
       if(g.bossX<710){g.bossX=710;g.bossMoveDir=1;}if(g.bossX>900){g.bossX=900;g.bossMoveDir=-1;}
-      g.bossY=462+Math.sin(g.t*12)*7;
+      const bossLevels=[462,362,272,182];
+      const lane=Math.floor(g.t/1.85)%bossLevels.length;g.bossLane=lane;
+      const targetY=bossLevels[lane];
+      g.bossY+=(targetY-g.bossY)*Math.min(1,dt*3.4);
+      g.bossY+=Math.sin(g.t*10)*4;
     }else{
       g.bossX=clamp(845-g.chase*.76+Math.sin(g.t*1.1)*(g.phase===1?0:21),730,880);
       g.bossY=465+Math.sin(g.t*9)*(g.phase===1?3:13);
@@ -47,7 +51,7 @@ RTVariants.register('sonic',{
   pattern(rt){
     const g=rt.g,seq=g.phase===1?['shuriken','spikes','shuriken','wave']:
       g.phase===2?['echo','wave','razor','shadow','spikes','dashcut']:
-      ['katana','katanaCombo','mirage','platformCut','katana','dashcut','katanaCombo','spikes','echo','razor'];
+      ['katana','katanaCombo','mirage','platformCut','katanaHigh','dashcut','katanaMid','spikes','katanaLow','echo','katanaGround','razor'];
     const type=seq[g.patternCount%seq.length];
     // A jump needs time to land before a contradictory duck instruction.
     // The two-beat attacks are fast, but new sequences don't cut them short.
@@ -58,14 +62,24 @@ RTVariants.register('sonic',{
       echo:'ДВОЙНИКИ НА ДОРОГЕ · ПРЫЖОК',razor:'РЕЖУЩИЕ СЮРИКЕНЫ · ПРИГНИСЬ',
       dashcut:'МГНОВЕННЫЙ РАЗРЕЗ · ПРЫЖОК',mirage:'ОБМАННАЯ ТЕНЬ · ПРИГНИСЬ',
       katana:'ПРЯМОЙ УДАР КАТАНОЙ · ПРЫЖОК',katanaCombo:'ДВОЙНОЙ РАЗРЕЗ · ПРЫЖОК, ЗАТЕМ ПРИСЕД',
-      platformCut:'СРЕЗ ПЛАТФОРМЫ · СМЕНИ ВЫСОТУ'};
+      platformCut:'СРЕЗ ПЛАТФОРМЫ · СМЕНИ ВЫСОТУ',
+      katanaHigh:'КАТАНА · ВЕРХНЯЯ ПЛАТФОРМА',katanaMid:'КАТАНА · СРЕДНЯЯ ПЛАТФОРМА',
+      katanaLow:'КАТАНА · НИЖНЯЯ ПЛАТФОРМА',katanaGround:'КАТАНА · УРОВЕНЬ ЗЕМЛИ'};
     rt.announce(names[type]);
     const duck=['shuriken','razor','mirage'].includes(type);
     const delay=g.hard?.62:.82;
-    rt.warn(type,{x:g.bossX,y:duck?435:462,r:duck?11:20},delay);
+    const laneYs=[462,362,272,182];
+    let attackY=duck?435:462;
+    if(type==='katana')attackY=laneYs[clamp(g.platformGround===null?0:(g.platformGround||0),0,3)];
+    if(type==='katanaHigh')attackY=182;
+    if(type==='katanaMid')attackY=272;
+    if(type==='katanaLow')attackY=362;
+    if(type==='katanaGround')attackY=462;
+    if(type==='platformCut')attackY=laneYs[(g.patternCount%3)+1];
+    rt.warn(type,{x:g.bossX,y:attackY,r:duck?11:20},delay);
     if(type==='mirage')rt.warn('spikes',{x:932,y:462,r:20},delay+1.14);
-    if(type==='katanaCombo')rt.warn('katanaHigh',{x:g.bossX,y:435,r:11},delay+.88);
-    if(type==='platformCut')rt.warn('katanaHigh',{x:g.bossX,y:405,r:11},delay+.9);
+    if(type==='katanaCombo')rt.warn('katanaHigh',{x:g.bossX,y:182,r:11},delay+.88);
+    if(type==='platformCut')rt.warn('katanaLow',{x:g.bossX,y:362,r:11},delay+.9);
     // Staggered feints demand two DIFFERENT reactions on Lunatic. The second
     // warning comes a full beat later, not in the middle of the same jump.
     if(g.hard&&type!=='mirage'&&type!=='katanaCombo'&&type!=='platformCut'){
@@ -75,8 +89,8 @@ RTVariants.register('sonic',{
   },
   trigger(rt,w){
     const g=rt.g,speed=(g.hard?630:430)+(g.phase-1)*(g.hard?40:30);
-    if(['katana','katanaHigh','katanaCombo','platformCut'].includes(w.type)){
-      const bladeY=w.type==='katanaHigh'?(w.y||435):462;
+    if(['katana','katanaHigh','katanaMid','katanaLow','katanaGround','katanaCombo','platformCut'].includes(w.type)){
+      const bladeY=w.y||462;
       g.objects.push({kind:'moving',shape:'katana',x:(g.bossX||850)-24,y:bladeY,
         vx:-(g.hard?900:700),vy:0,r:w.type==='katanaHigh'?8:12,damage:g.hard?18:13,life:1.65});
     }else if(['shuriken','razor','mirage'].includes(w.type)){
@@ -129,7 +143,10 @@ RTVariants.register('sonic',{
     if(g.phase===3&&g.platforms){
       for(const p of g.platforms){ctx.fillStyle='#172a36';ctx.fillRect(p.x,p.y,p.w,12);
         ctx.fillStyle='#a6e4e8';ctx.fillRect(p.x,p.y,p.w,3);
-        for(let x=p.x+12;x<p.x+p.w;x+=28)line(ctx,x,p.y+4,x-5,p.y+11,'#9ddce544',1);}
+        ctx.fillStyle='#8ad8e51c';ctx.fillRect(p.x+5,p.y+12,p.w-10,13);
+        for(let x=p.x+12;x<p.x+p.w;x+=28)line(ctx,x,p.y+4,x-5,p.y+11,'#9ddce544',1);
+        canvasText(ctx,'УРОВЕНЬ '+p.id,p.x+p.w/2,p.y-9,10,'#bdebf0');}
+      canvasText(ctx,'ПРЫГАЙ МЕЖДУ ВЫСОТАМИ · ▲',480,176,12,'#bdebf0');
     }
     if(g.phase>=2)for(let i=0;i<(g.phase===3?15:8);i++){
       const yy=165+i*24;
