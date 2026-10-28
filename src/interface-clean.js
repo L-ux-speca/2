@@ -16,7 +16,7 @@
         <div><b>Играть</b><small>Бой, аркада, тренировка</small></div><span class="arrow">↗</span>
       </button>
       <button class="mode-btn" onclick="RTHub.open()">
-        <div><b>Территории РТ</b><small>4 босса · Easy / Lunatic</small></div><span class="arrow">→</span>
+        <div><b>Территории РТ</b><small>7 испытаний · Арая · Дэвид · Айри · Онсоку · Юзуха · Цезарь · Ляпис</small></div><span class="arrow">→</span>
       </button>
       <button class="mode-btn" onclick="Encyclopedia.open()">
         <div><b>Энциклопедия</b><small>Персонажи и способности</small></div><span class="arrow">▣</span>
