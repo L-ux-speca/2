@@ -6,21 +6,32 @@ const AIRI_LANES=[202,355,508];
 RTVariants.register('airi',{
   phase(rt,n){
     const g=rt.g;
-    g.formName=['','КУБИЧЕСКИЙ АВТОМАТ','ЗЕРКАЛЬНЫЙ РОЙ','ПРИЗМАТИЧЕСКОЕ ЯДРО'][n];
+    g.formName=['','КУБИЧЕСКИЙ АВТОМАТ','ПРИЗМАТИЧЕСКОЕ ЯДРО','ДЕВЯТИКЛЕТОЧНЫЙ ЛАБИРИНТ'][n];
     g.patternCount=0;g.patternTimer=n===1?1.6:g.hard?1.12:1.7;
     if(n>=2)rt.warn('clone',{lane:(n+1)%3},.7);
-    if(n===3)rt.warn('clone',{lane:2},1.35);
+    if(n===3){g.gridCol=1;g.gridRow=1;g.gridMoveCD=0;rt.warn('clone',{lane:2},1.35);}
   },
   move(rt,dt,mx){
     const g=rt.g;
-    if(Input.tap(0,'up')||Input.pressed.has('touch:up'))g.lane=Math.max(0,g.lane-1);
-    if(Input.tap(0,'down')||Input.pressed.has('touch:down'))g.lane=Math.min(2,g.lane+1);
-    if(g.dashTime<=0)g.x+=mx*(g.slow>0?170:230)*dt;
-    g.x=clamp(g.x,108,454);g.y=AIRI_LANES[g.lane];
+    if(g.phase===3){
+      g.gridMoveCD=Math.max(0,(g.gridMoveCD||0)-dt);
+      if(g.gridMoveCD<=0){
+        if(Input.tap(0,'left')||Input.pressed.has('touch:left')){g.gridCol=Math.max(0,(g.gridCol??1)-1);g.gridMoveCD=.14;}
+        else if(Input.tap(0,'right')||Input.pressed.has('touch:right')){g.gridCol=Math.min(2,(g.gridCol??1)+1);g.gridMoveCD=.14;}
+        else if(Input.tap(0,'up')||Input.pressed.has('touch:up')){g.gridRow=Math.max(0,(g.gridRow??1)-1);g.gridMoveCD=.14;}
+        else if(Input.tap(0,'down')||Input.pressed.has('touch:down')){g.gridRow=Math.min(2,(g.gridRow??1)+1);g.gridMoveCD=.14;}
+      }
+      g.x=[135,285,435][g.gridCol??1];g.y=AIRI_LANES[g.gridRow??1];g.lane=g.gridRow??1;
+    }else{
+      if(Input.tap(0,'up')||Input.pressed.has('touch:up'))g.lane=Math.max(0,g.lane-1);
+      if(Input.tap(0,'down')||Input.pressed.has('touch:down'))g.lane=Math.min(2,g.lane+1);
+      if(g.dashTime<=0)g.x+=mx*(g.slow>0?170:230)*dt;
+      g.x=clamp(g.x,108,454);g.y=AIRI_LANES[g.lane];
+    }
     g.bossX=g.phase===1?829:815+Math.cos(g.t*(g.phase===3?2.1:1.1))*47;
     g.bossY=g.phase===1?AIRI_LANES[1]+Math.sin(g.t*.8)*35:
-      g.phase===2?AIRI_LANES[(Math.floor(g.t/2.2))%3]:
-        AIRI_LANES[(Math.floor(g.t/(g.hard?.8:1.2)))%3];
+      g.phase===2?AIRI_LANES[(Math.floor(g.t/(g.hard?.8:1.2)))%3]:
+        AIRI_LANES[(Math.floor(g.t/1.65))%3];
     g.beatTimer+=dt;
     const interval=g.hard?.56:.83;
     if(g.beatTimer>=interval){g.beatTimer-=interval;g.beat++;}
@@ -39,14 +50,19 @@ RTVariants.register('airi',{
   },
   pattern(rt){
     const g=rt.g,seq=g.phase===1?['cubes','spikes','cubes','mirror']:
-      g.phase===2?['clone','mirror','flip','spikes','cubes','clone']:
-      ['prism','flip','clone','burst','mirror','spikes','prism'];
+      g.phase===2?['prism','flip','clone','burst','mirror','spikes','prism']:
+      ['gridCross','gridSweep','gridLock','prism','flip','burst','gridCross','gridLock','gridSweep'];
     const type=seq[g.patternCount%seq.length];
     const delay=g.hard?.63:.86;
     // Leave enough time for the last wave's telegraph to resolve before a
     // new safe lane is chosen. Lunatic is dense, but not a forced-hit puzzle.
-    g.patternTimer=g.hard?(g.phase===3?1.8:1.58):1.66;
-    if(type==='clone'){
+    g.patternTimer=g.hard?(g.phase===3?2.05:1.58):g.phase===3?2.05:1.66;
+    if(type==='gridCross'||type==='gridSweep'||type==='gridLock'){
+      const safeCell=(g.patternCount*5+2)%9;
+      rt.announce(type==='gridCross'?'ПРИЗМАТИЧЕСКИЙ КРЕСТ · ВЫБЕРИ КЛЕТКУ':type==='gridSweep'?'СМЕНА РЯДОВ · ИЩИ ПРОХОД':'ВЕРТИКАЛЬНЫЙ ЗАМОК · СМЕНИ КОЛОНКУ');
+      rt.warn(type,{safeCell,safe:Math.floor(safeCell/3)},g.hard?.9:1.15);
+      if(g.hard&&type!=='gridCross')rt.warn(type==='gridSweep'?'gridLock':'gridSweep',{safeCell:(safeCell+4)%9,safe:Math.floor(((safeCell+4)%9)/3)},1.65);
+    }else if(type==='clone'){
       rt.announce('ЗЕРКАЛЬНАЯ КОПИЯ · РАЗРУШЬ КЛОНА');
       rt.warn('clone',{lane:(g.patternCount+1)%3},delay);
     }else{
@@ -67,6 +83,15 @@ RTVariants.register('airi',{
   },
   trigger(rt,w){
     const g=rt.g;
+    if(['gridCross','gridSweep','gridLock'].includes(w.type)){
+      const rows=[202,355,508],cols=[135,285,435],safe=w.safeCell??4;
+      for(let row=0;row<3;row++)for(let col=0;col<3;col++){
+        const cell=row*3+col;
+        const dangerous=w.type==='gridSweep'?row!==Math.floor(safe/3):w.type==='gridLock'?col!==safe%3:cell!==safe;
+        if(dangerous)rt.bullet(cols[col],rows[row],0,0,g.hard?13:9,43,'#dca8f5',{shape:'gridcell',life:.82});
+      }
+      return;
+    }
     if(w.type==='clone'){
       g.targets=g.targets.filter(t=>t.id==='boss'||t.hp>0);
       if(g.targets.filter(t=>t.id!=='boss').length>=(g.hard?3:2))return;
@@ -89,7 +114,7 @@ RTVariants.register('airi',{
     }
   },
   status(rt){const g=rt.g;
-    return `ДОРОЖКА ${g.lane+1}/3 · ТАКТ ${g.beat} · УКЛОНЕНИЯ ${g.grazeCount}`;
+    return g.phase===3?`КЛЕТКА ${(g.gridRow??1)+1}-${(g.gridCol??1)+1}/9 · УКЛОНЕНИЯ ${g.grazeCount}`:`ДОРОЖКА ${g.lane+1}/3 · ТАКТ ${g.beat} · УКЛОНЕНИЯ ${g.grazeCount}`;
   },
   drawBg(rt,ctx){
     const g=rt.g,gradient=ctx.createLinearGradient(0,0,960,600);
@@ -97,13 +122,21 @@ RTVariants.register('airi',{
     gradient.addColorStop(1,g.phase===2?'#25203b':'#13172a');
     ctx.fillStyle=gradient;ctx.fillRect(0,0,960,600);
     for(let i=0;i<3;i++){
-      const y=AIRI_LANES[i];ctx.fillStyle=i===g.lane?'#8559c522':
+      const y=AIRI_LANES[i];ctx.fillStyle=i===(g.phase===3?(g.gridRow??1):g.lane)?'#8559c522':
         g.phase===3?'#9864c418':'#55417910';
       ctx.fillRect(36,y-57,888,114);
       line(ctx,36,y-57,924,y-57,'#a989dc32',2);
       line(ctx,36,y+57,924,y+57,'#a989dc32',2);
       for(let x=38;x<930;x+=60)line(ctx,x,y-56,x,y+56,'#ac9cce12');
       canvasText(ctx,String(i+1),65,y+8,25,i===g.lane?'#e7ceff':'#715d95');
+    }
+    if(g.phase===3){
+      for(let row=0;row<3;row++)for(let col=0;col<3;col++){
+        const x=[135,285,435][col],y=AIRI_LANES[row];
+        ctx.fillStyle=(row===(g.gridRow??1)&&col===(g.gridCol??1))?'#c9a4ff20':'#8b7aa010';
+        ctx.fillRect(x-65,y-55,130,110);ctx.strokeStyle='#e0baff66';ctx.lineWidth=2;ctx.strokeRect(x-65,y-55,130,110);
+      }
+      canvasText(ctx,'СЕТКА 3 × 3 · ← → СМЕНА КОЛОНКИ · ↑ ↓ СМЕНА РЯДА',480,145,14,'#e3c7fa');
     }
     const beat=(g.beatTimer/(g.hard?.61:.83));
     circle(ctx,478,77,22,'#5d4087');

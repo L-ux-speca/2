@@ -4,7 +4,7 @@
 RTVariants.register('david',{
   phase(rt,n){
     const g=rt.g;
-    g.formName=['','НОСИТЕЛЬ ЯДА','ХИМИЧЕСКИЙ РЕАКТОР','ГАЗОВЫЙ КОЛОСС'][n];
+    g.formName=['','НОСИТЕЛЬ ЯДА','ХИМИЧЕСКИЙ РЕАКТОР','КАТАЛИЗАТОР · АВАРИЙНЫЙ РЕЖИМ'][n];
     g.patternCount=0;
     g.patternTimer=n===1?1.5:g.hard?1.15:1.65;
     if(n===3)g.objects=g.objects.filter(o=>o.kind!=='poison'||o.life>1.1);
@@ -15,17 +15,26 @@ RTVariants.register('david',{
     if(g.dashTime<=0){g.x+=mx/length*speed*dt;g.y+=my/length*speed*dt;}
     g.x=clamp(g.x,65,670);g.y=clamp(g.y,135,515);
     g.bossX=g.phase===1?820+Math.sin(g.t*.68)*24:
-      g.phase===2?804+Math.cos(g.t*1.03)*64:802+Math.cos(g.t*1.8)*92;
-    g.bossY=348+Math.sin(g.t*(g.phase===1?.52:g.phase===2?1.25:2))*
-      (g.phase===1?130:160);
+      g.phase===2?804+Math.cos(g.t*1.03)*64:690+Math.cos(g.t*1.45)*175;
+    g.bossY=348+Math.sin(g.t*(g.phase===1?.52:g.phase===2?1.25:2.7))*
+      (g.phase===1?130:g.phase===2?160:185);
   },
   pattern(rt){
     const g=rt.g,phase=g.phase,seq=phase===1?['cloud','fan','cloud','wall','fan']:
       phase===2?['reactor','fork','wall','doubleCloud','fan','ring']:
-        ['ring','detonate','fork','reactor','wall','doubleCloud','ring'];
+        ['sweep','vent','boil','wall','sweep','ring','vent','boil','reactor','fork','detonate'];
     const type=seq[g.patternCount%seq.length],delay=g.hard?.72:1.05;
     g.patternTimer=Math.max(.92,(g.hard?1.28:2.15)-(phase-1)*(g.hard?.14:.18));
-    if(type==='cloud'||type==='doubleCloud'){
+    if(type==='sweep'){
+      rt.announce('ГАЗОВЫЕ ФРОНТЫ · СМЕНИ ТРАЕКТОРИЮ');
+      rt.warn('sweep',{safe:clamp(180+(g.patternCount%4)*85,180,435)},delay);
+    }else if(type==='vent'){
+      rt.announce('АВАРИЙНЫЕ КЛАПАНЫ · ПЕРЕКРЁСТНЫЙ ВЫБРОС');
+      rt.warn('vent',{x:g.bossX,y:g.bossY},delay);
+    }else if(type==='boil'){
+      rt.announce('ПЕРЕГОНКА · ОБЛАКА НА ГРАНИ ВЗРЫВА');
+      rt.warn('boil',{x:480,y:330,r:210},delay);
+    }else if(type==='cloud'||type==='doubleCloud'){
       rt.announce(type==='cloud'?'ЯДОВИТАЯ БОМБА':'ТОКСИЧНАЯ ЦЕПНАЯ РЕАКЦИЯ');
       rt.warn('cloud',{x:g.x,y:g.y,r:g.hard?67:60},delay);
       if(type==='doubleCloud')rt.warn('cloud',{
@@ -53,14 +62,38 @@ RTVariants.register('david',{
     }
     // Lunatic adds offset hazards; the delayed warning leaves time to move.
     if(g.hard&&(phase>=2||g.patternCount%2===0)&&
-      type!=='reactor'&&type!=='doubleCloud'){
+      type!=='reactor'&&type!=='doubleCloud'&&type!=='sweep'&&type!=='vent'&&type!=='boil'){
       rt.warn('cloud',{x:clamp(g.x+(g.patternCount%2?85:-85),85,645),
         y:clamp(g.y+(g.patternCount%2?-78:78),140,510),r:41},delay+.57);
     }
   },
   trigger(rt,w){
     const g=rt.g;
-    if(w.type==='cloud'||w.type==='reactor'){
+    if(w.type==='sweep'){
+      const ys=[190,300,410,520],gap=Math.round(w.safe/110)%4;
+      for(let i=0;i<ys.length;i++)if(i!==gap){
+        const fromLeft=(i+g.patternCount)%2===0;
+        g.objects.push({kind:'moving',shape:'gasorb',x:fromLeft?8:952,y:ys[i],
+          vx:(fromLeft?1:-1)*(g.hard?255:190),vy:(i%2?1:-1)*(g.hard?38:24),
+          r:g.hard?25:21,damage:9,life:5});
+      }
+    }else if(w.type==='vent'){
+      for(const [x,y] of [[65,145],[690,145],[65,520],[690,520]]){
+        const a=Math.atan2(g.y-y,g.x-x);
+        for(let i=-1;i<=1;i++){const ang=a+i*(g.hard?.16:.23);
+          rt.bullet(x,y,Math.cos(ang)*(g.hard?315:225),Math.sin(ang)*(g.hard?315:225),
+            8,9,'#c5f39b',{slow:true});}
+      }
+    }else if(w.type==='boil'){
+      const clouds=g.objects.filter(o=>o.kind==='poison');
+      if(!clouds.length){
+        for(const [x,y] of [[250,235],[465,410],[610,250]])g.objects.push({kind:'poison',form:'reactor',x,y,r:49,damage:8,life:3.8,tick:.12});
+      }else for(const o of clouds){
+        o.r=Math.min(105,o.r*1.35);o.life=Math.min(o.life,1.35);
+        for(let i=0;i<(g.hard?10:7);i++){const a=i*Math.PI*2/(g.hard?10:7);
+          rt.bullet(o.x,o.y,Math.cos(a)*(g.hard?235:175),Math.sin(a)*(g.hard?235:175),6,7,'#d9f8a1');}
+      }
+    }else if(w.type==='cloud'||w.type==='reactor'){
       const active=g.objects.filter(o=>o.kind==='poison');
       if(active.length>=7)active[0].life=0;
       g.objects.push({kind:'poison',form:w.type,x:w.x,y:w.y,r:w.r,
@@ -121,10 +154,14 @@ RTVariants.register('david',{
     }
     ctx.fillStyle='#101d1b';ctx.fillRect(730,118,230,430);
     circle(ctx,g.bossX,g.bossY,65+Math.sin(g.t*2.8)*8,'#79d4a017',true,2);
-    if(g.phase>=2)for(let i=0;i<5;i++){
+    if(g.phase===2)for(let i=0;i<5;i++){
       const x=770+Math.cos(i*1.75+g.t*.3)*150,y=345+Math.sin(i*1.75+g.t*.3)*165;
-      circle(ctx,x,y,7,'#a7e98d38');
-      line(ctx,x-19,y,x+19,y,'#c3f7a327',2);
+      circle(ctx,x,y,7,'#a7e98d38');line(ctx,x-19,y,x+19,y,'#c3f7a327',2);
+    }
+    if(g.phase===3){
+      for(let i=0;i<3;i++){const a=g.t*1.5+i*Math.PI*2/3,x=g.bossX+Math.cos(a)*92,y=g.bossY+Math.sin(a)*72;
+        circle(ctx,x,y,25,'#c2f59b28',true,3);circle(ctx,x,y,7,'#d9ffb1');line(ctx,g.bossX,g.bossY,x,y,'#d6ffb133',2);}
+      canvasText(ctx,'АВАРИЙНАЯ ПЕРЕГОНКА',480,125,15,'#d6f5ad');
     }
     canvasText(ctx,'КАРАНТИН · ОПАСНАЯ ЗОНА',480,93,21,'#8dc9a6');
   },
@@ -142,6 +179,10 @@ RTVariants.register('david',{
   },
   drawExtra(rt,ctx){
     const g=rt.g;
+    for(const o of g.objects)if(o.kind==='moving'&&o.shape==='gasorb'){
+      ctx.save();ctx.globalAlpha=.72;circle(ctx,o.x,o.y,o.r,'#9de88b66');circle(ctx,o.x,o.y,o.r*.58,'#d6ffb477',true,2);
+      for(let i=0;i<5;i++)circle(ctx,o.x+Math.cos(g.t*2+i*1.25)*o.r*.62,o.y+Math.sin(g.t*2+i*1.25)*o.r*.62,4,'#e2ffc7');ctx.restore();
+    }
     for(const o of g.objects)if(o.kind==='poison'){
       ctx.save();ctx.globalAlpha=.33+.12*Math.sin(g.t*7);
       circle(ctx,o.x,o.y,o.r,'#79de6c55');

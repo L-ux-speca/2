@@ -7,33 +7,47 @@ RTVariants.register('sonic',{
     const g=rt.g;
     g.formName=['','НЕУЛОВИМЫЙ БЕГУН','АРМИЯ СКОРОСТИ','ЗАПРЕДЕЛЬНЫЙ ОНСОКУ'][n];
     g.patternCount=0;g.patternTimer=n===1?1.45:g.hard?1.1:1.7;
-    if(n===3)g.chase=Math.max(g.chase,42);
+    if(n===3){g.chase=Math.max(g.chase,42);g.platforms=[{x:145,w:155,y:405,id:0},{x:355,w:150,y:350,id:1},{x:565,w:155,y:395,id:2}];g.platformGround=null;g.bossMoveDir=-1;g.bossSlashTimer=0;}
   },
   move(rt,dt,mx){
     const g=rt.g;
     if(g.grounded&&(Input.tap(0,'up')||Input.pressed.has('touch:up'))){
-      g.jumpVy=g.hard?-725:-690;g.grounded=false;AudioSys.sfx('jump');
+      g.jumpVy=g.hard?-725:-690;g.grounded=false;g.platformGround=null;AudioSys.sfx('jump');
     }
     g.crouch=g.grounded&&(Input.has(0,'down')||Input.touchHeld.has('down'));
     if(g.dashTime<=0)g.x+=mx*(g.crouch?145:g.hard?295:280)*dt;
     g.x=clamp(g.x,110,702);
+    if(g.grounded&&g.platformGround!==null&&g.platforms){
+      const p=g.platforms.find(p=>p.id===g.platformGround);
+      if(p&&g.x>=p.x-8&&g.x<=p.x+p.w+8)g.y=p.y-18;
+      else{g.grounded=false;g.platformGround=null;}
+    }else if(g.grounded)g.y=462;
     if(!g.grounded){
-      g.jumpVy+=1640*dt;
-      g.y+=g.jumpVy*dt;
-      if(g.y>=462){g.y=462;g.jumpVy=0;g.grounded=true;}
-    }else g.y=462;
+      const prevY=g.y;g.jumpVy+=1640*dt;g.y+=g.jumpVy*dt;
+      if(g.phase===3&&g.jumpVy>0&&g.platforms){
+        for(const p of g.platforms){const landingY=p.y-18;
+          if(g.x>=p.x-12&&g.x<=p.x+p.w+12&&prevY<=landingY&&g.y>=landingY){g.y=landingY;g.jumpVy=0;g.grounded=true;g.platformGround=p.id;break;}
+        }
+      }
+      if(!g.grounded&&g.y>=462){g.y=462;g.jumpVy=0;g.grounded=true;g.platformGround=null;}
+    }
     const runFactor=mx>0?g.hard?11:10:mx<0?-9:g.hard?-5.5:2.4;
     g.chase=clamp(g.chase+runFactor*dt,0,100);
     if(g.dashTime>0)g.chase=clamp(g.chase+19*dt,0,100);
     g.progress+=(305+g.chase*2+(g.phase-1)*85)*dt;
-    g.bossX=clamp(845-g.chase*.76+Math.sin(g.t*(g.phase===3?2.9:1.1))*
-      (g.phase===1?0:g.phase===2?21:42),730,880);
-    g.bossY=465+Math.sin(g.t*(g.phase===3?16:9))*(g.phase===1?3:13);
+    if(g.phase===3){
+      g.bossX=(g.bossX||835)+(g.bossMoveDir||-1)*(g.hard?245:205)*dt;
+      if(g.bossX<710){g.bossX=710;g.bossMoveDir=1;}if(g.bossX>900){g.bossX=900;g.bossMoveDir=-1;}
+      g.bossY=462+Math.sin(g.t*12)*7;
+    }else{
+      g.bossX=clamp(845-g.chase*.76+Math.sin(g.t*1.1)*(g.phase===1?0:21),730,880);
+      g.bossY=465+Math.sin(g.t*9)*(g.phase===1?3:13);
+    }
   },
   pattern(rt){
     const g=rt.g,seq=g.phase===1?['shuriken','spikes','shuriken','wave']:
       g.phase===2?['echo','wave','razor','shadow','spikes','dashcut']:
-      ['mirage','dashcut','razor','echo','spikes','wave','mirage'];
+      ['katana','katanaCombo','mirage','platformCut','katana','dashcut','katanaCombo','spikes','echo','razor'];
     const type=seq[g.patternCount%seq.length];
     // A jump needs time to land before a contradictory duck instruction.
     // The two-beat attacks are fast, but new sequences don't cut them short.
@@ -42,22 +56,30 @@ RTVariants.register('sonic',{
     const names={shuriken:'СЮРИКЕН · ПРИГНИСЬ',spikes:'СТАЛЬНЫЕ ШИПЫ · ПРЫЖОК',
       wave:'ВЕТРЯНОЙ РАЗРЕЗ · ПРЫЖОК',shadow:'ТЕНЬ СКОРОСТИ · ПРЫЖОК',
       echo:'ДВОЙНИКИ НА ДОРОГЕ · ПРЫЖОК',razor:'РЕЖУЩИЕ СЮРИКЕНЫ · ПРИГНИСЬ',
-      dashcut:'МГНОВЕННЫЙ РАЗРЕЗ · ПРЫЖОК',mirage:'ОБМАННАЯ ТЕНЬ · ПРИГНИСЬ'};
+      dashcut:'МГНОВЕННЫЙ РАЗРЕЗ · ПРЫЖОК',mirage:'ОБМАННАЯ ТЕНЬ · ПРИГНИСЬ',
+      katana:'ПРЯМОЙ УДАР КАТАНОЙ · ПРЫЖОК',katanaCombo:'ДВОЙНОЙ РАЗРЕЗ · ПРЫЖОК, ЗАТЕМ ПРИСЕД',
+      platformCut:'СРЕЗ ПЛАТФОРМЫ · СМЕНИ ВЫСОТУ'};
     rt.announce(names[type]);
     const duck=['shuriken','razor','mirage'].includes(type);
     const delay=g.hard?.62:.82;
-    rt.warn(type,{x:932,y:duck?435:462,r:duck?11:20},delay);
+    rt.warn(type,{x:g.bossX,y:duck?435:462,r:duck?11:20},delay);
     if(type==='mirage')rt.warn('spikes',{x:932,y:462,r:20},delay+1.14);
+    if(type==='katanaCombo')rt.warn('katanaHigh',{x:g.bossX,y:435,r:11},delay+.88);
+    if(type==='platformCut')rt.warn('katanaHigh',{x:g.bossX,y:405,r:11},delay+.9);
     // Staggered feints demand two DIFFERENT reactions on Lunatic. The second
     // warning comes a full beat later, not in the middle of the same jump.
-    if(g.hard&&type!=='mirage'){
+    if(g.hard&&type!=='mirage'&&type!=='katanaCombo'&&type!=='platformCut'){
       const reply=duck?'wave':'razor';
       rt.warn(reply,{x:932,y:duck?462:435,r:duck?20:11},delay+.92);
     }
   },
   trigger(rt,w){
     const g=rt.g,speed=(g.hard?630:430)+(g.phase-1)*(g.hard?40:30);
-    if(['shuriken','razor','mirage'].includes(w.type)){
+    if(['katana','katanaHigh','katanaCombo','platformCut'].includes(w.type)){
+      const bladeY=w.type==='katanaHigh'?(w.y||435):462;
+      g.objects.push({kind:'moving',shape:'katana',x:(g.bossX||850)-24,y:bladeY,
+        vx:-(g.hard?900:700),vy:0,r:w.type==='katanaHigh'?8:12,damage:g.hard?18:13,life:1.65});
+    }else if(['shuriken','razor','mirage'].includes(w.type)){
       const count=w.type==='razor'?(g.hard?5:3):w.type==='mirage'?2:g.hard?3:2;
       for(let i=0;i<count;i++)rt.bullet(955+i*(w.type==='razor'?95:115),435,
         -speed,0,7,11,'#a9e8ed',{shape:'shuriken'});
@@ -104,6 +126,11 @@ RTVariants.register('sonic',{
     line(ctx,0,508,960,508,'#e9b5a5',4);
     const dashOffset=g.progress*3%100;
     for(let x=-100;x<1080;x+=100)ctx.fillStyle='#deb6a3',ctx.fillRect(x-dashOffset,554,54,4);
+    if(g.phase===3&&g.platforms){
+      for(const p of g.platforms){ctx.fillStyle='#172a36';ctx.fillRect(p.x,p.y,p.w,12);
+        ctx.fillStyle='#a6e4e8';ctx.fillRect(p.x,p.y,p.w,3);
+        for(let x=p.x+12;x<p.x+p.w;x+=28)line(ctx,x,p.y+4,x-5,p.y+11,'#9ddce544',1);}
+    }
     if(g.phase>=2)for(let i=0;i<(g.phase===3?15:8);i++){
       const yy=165+i*24;
       line(ctx,0,yy,960,yy-7,'#abdfee'+(g.phase===3?'30':'16'),g.phase===3?2:1);
@@ -113,7 +140,13 @@ RTVariants.register('sonic',{
   drawExtra(rt,ctx){
     const g=rt.g;
     for(const o of g.objects)if(o.kind==='moving'){
-      if(o.shape==='spikes'){
+      if(o.shape==='katana'){
+        ctx.save();ctx.translate(o.x,o.y);ctx.rotate(-.08);
+        ctx.shadowColor='#b9f4ff';ctx.shadowBlur=12;
+        ctx.strokeStyle='#e7fbff';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-30,0);ctx.lineTo(30,0);ctx.stroke();
+        ctx.strokeStyle='#76d8ee';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-30,-4);ctx.lineTo(30,-4);ctx.stroke();
+        ctx.strokeStyle='#d5a77c';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-18,4);ctx.lineTo(-5,4);ctx.stroke();ctx.restore();
+      }else if(o.shape==='spikes'){ 
         ctx.save();ctx.fillStyle='#d4a1ad';ctx.beginPath();
         ctx.moveTo(o.x-21,496);ctx.lineTo(o.x,440);ctx.lineTo(o.x+21,496);ctx.fill();
         ctx.restore();
@@ -138,7 +171,11 @@ RTVariants.register('sonic',{
       line(ctx,x,g.bossY-23,x+34,g.bossY-23,'#b2e7ed',3);
     }
     ctx.restore();
-    if(g.phase===3)circle(ctx,g.bossX,g.bossY,64+Math.sin(g.t*11)*6,
-      '#a3f4ee77',true,3);
+    if(g.phase===3){
+      circle(ctx,g.bossX,g.bossY,64+Math.sin(g.t*11)*6,'#a3f4ee77',true,3);
+      // Katana silhouette tracks the moving boss, making direct attacks readable.
+      ctx.save();ctx.translate(g.bossX-24,g.bossY+2);ctx.rotate(-.22);
+      line(ctx,-24,0,34,0,'#e5fbff',5);line(ctx,-24,-4,34,-4,'#8be4f0',2);line(ctx,-18,5,-6,5,'#d9ad81',4);ctx.restore();
+    }
   }
 });
