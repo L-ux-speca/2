@@ -19,19 +19,20 @@ const RTVariants={g:null,
     this.g={c,enemy,info,bossId,test,hard:difficulty==='hard',t:0,
       state:'intro',intro:1.8,phase:1,phaseWait:0,headline:info.title.toUpperCase(),
       headlineEnd:4,won:false,finishTime:0,
-      x:bossId==='david'?260:bossId==='airi'?180:230,
-      y:bossId==='airi'?355:bossId==='sonic'?462:350,
+      x:bossId==='david'?260:bossId==='airi'?180:bossId==='caesar'?75:bossId==='yuzuha'?120:bossId==='lapis'?230:230,
+      y:bossId==='airi'?355:bossId==='sonic'?462:bossId==='caesar'?145:bossId==='yuzuha'?350:bossId==='lapis'?330:350,
       vx:0,vy:0,dx:1,dy:0,face:1,lane:1,crouch:false,grounded:true,
       hp:c.hp,pe:c.pe,inv:0,shield:0,slow:0,mark:0,buff:0,
       cd:Array(4).fill(0),customCD:Array(6).fill(0),
       gauge:0,combo:0,lastGraze:-100,grazeCount:0,damage:0,usedDash:0,
       dashTime:0,dashCD:0,dashVX:0,dashVY:0,
-      bossHP:maxHP,bossMaxHP:maxHP,bossX:815,bossY:bossId==='sonic'?462:355,
-      targets:[{id:'boss',name:enemy.short,hp:maxHP,maxHp:maxHP,x:815,
-        y:bossId==='sonic'?462:355,r:37}],
+      bossHP:maxHP,bossMaxHP:maxHP,bossX:bossId==='caesar'?760:bossId==='yuzuha'?815:bossId==='lapis'?815:815,bossY:bossId==='sonic'?462:bossId==='caesar'?300:bossId==='yuzuha'?350:bossId==='lapis'?310:355,
+      targets:[{id:'boss',name:enemy.short,hp:maxHP,maxHp:maxHP,x:bossId==='caesar'?760:815,
+        y:bossId==='sonic'?462:bossId==='caesar'?300:bossId==='yuzuha'?350:bossId==='lapis'?310:355,r:37}],
       bullets:[],shots:[],warnings:[],objects:[],activeAbilities:[],fx:[],tasks:[],
       patternTimer:1.6,patternCount:0,beat:0,beatTimer:0,progress:0,chase:35,
       jumpVy:0,hitTimer:0,extra:'',selectedTarget:'boss'};
+    if(bossId==='yuzuha')this.g.rocks=[{x:230,y:480,taken:false},{x:390,y:455,taken:false},{x:560,y:490,taken:false}];
     this.genre()?.phase?.(this,1);
     App.showSkills(c,true);
     const targetButton=document.querySelector('.target-button');
@@ -75,8 +76,8 @@ const RTVariants={g:null,
     if(target.id==='boss'){
       g.bossHP=target.hp;
       if(g.bossHP<=0){this.finish(true);return true}
-      if(g.phase===1&&g.bossHP<=g.bossMaxHP*2/3)this.phase(2);
-      else if(g.phase===2&&g.bossHP<=g.bossMaxHP/3)this.phase(3);
+      if(g.bossId!=='lapis'){if(g.phase===1&&g.bossHP<=g.bossMaxHP*2/3)this.phase(2);
+      else if(g.phase===2&&g.bossHP<=g.bossMaxHP/3)this.phase(3);}
     }else if(target.hp<=0){
       this.spark(target.x,target.y,'#d6ffed',22);
       this.announce('КЛОН УНИЧТОЖЕН');
@@ -110,7 +111,7 @@ const RTVariants={g:null,
   },
   cast(index){
     const g=this.g,skill=g?.c.skills[index];
-    if(!skill||skill.passive||g.state!=='active'||g.phaseWait>0||g.cd[index]>0)return false;
+    if(!skill||skill.passive||g.state!=='active'||g.phaseWait>0||g.cd[index]>0||g.bossId==='yuzuha'&&g.phase===1&&g.carryRock)return false;
     const activeRevolver=g.c.id==='kisei'&&index===3&&g.activeAbilities.some(e=>e.kind==='revolver'&&e.life>0);
     const cost=activeRevolver?4:skill.cost;
     if(g.pe<cost&&!Cheats.energy)return false;
@@ -227,6 +228,17 @@ const RTVariants={g:null,
     }
     g.shots=g.shots.filter(s=>s.life>0&&s.x>-60&&s.x<1030&&s.y>65&&s.y<650);
     for(const b of g.bullets){const px=b.x,py=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+      if(b.bounce){
+        if(b.x<18||b.x>942){b.vx=-b.vx;b.x=clamp(b.x,18,942)}
+        if(b.y<82||b.y>572){b.vy=-b.vy;b.y=clamp(b.y,82,572)}
+        if(g.bossId==='caesar'&&!b.redExit){
+          for(const wall of (g.mazeWalls||CAESAR_MAZE))if(b.x+b.r>wall.x&&b.x-b.r<wall.x+wall.w&&b.y+b.r>wall.y&&b.y-b.r<wall.y+wall.h){
+            if(px+b.r<=wall.x||px-b.r>=wall.x+wall.w)b.vx=-b.vx;else b.vy=-b.vy;
+            b.x=px;b.y=py;break;
+          }
+        }
+      }
+      if(b.redExit&&hypot(b.x-(g.exitX||885),b.y-(g.exitY||510))<25){b.life=0;}
       let intercepted=false;
       for(const summon of g.activeAbilities)if(summon.kind==='summon'&&summon.life>0&&summon.hp>0&&
         Hitbox.sweepCircleCircle(px,py,b.x,b.y,b.r,

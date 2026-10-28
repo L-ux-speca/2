@@ -6,7 +6,7 @@ const RTHub={selected:'araya',
     const info=RTBossCatalog.get(this.selected);
     App.modalBox('Территории · РТ',`
       <div class="stack"><p class="muted" style="font-size:12px">
-        Четыре разных испытания. Выбери территорию, затем своего бойца.
+        Семь разных испытаний. Выбери территорию, затем своего бойца.
         В обычном бою против ИИ соответствующая РТ откроется только при 100% шкалы.
       </p><div class="field"><label>БОСС И ЖАНР</label>
         <select id="rtBoss" onchange="RTHub.preview(this.value)">
@@ -28,7 +28,7 @@ const RTHub={selected:'araya',
     pane.innerHTML=`<div class="rt-hub-avatar">${portrait(char(id))}</div>
       <div><div class="eyebrow">${esc(info.genre)}</div><h3>${esc(info.title)}</h3>
       <p>${esc(info.short)}</p><p class="muted" style="font-size:11px">${esc(info.hint)}</p>
-      <b>Три фазы · собственные атаки</b></div>`;
+      <b>Фазы и атаки · уникальные правила</b></div>`;
   },
   launch(){
     const id=document.querySelector('#rtBoss')?.value,
@@ -53,7 +53,7 @@ const RTHub={selected:'araya',
     home();
     const button=document.querySelector('.menu button[onclick="App.rtSelect()"]');
     if(button){button.removeAttribute('onclick');button.addEventListener('click',()=>RTHub.open());
-      button.innerHTML='<div><b>Территории РТ</b><small>Араи · Дэвид · Айри · Онсоку</small></div><span class="arrow">→</span>';}
+      button.innerHTML='<div><b>Территории РТ</b><small>Араи · Дэвид · Айри · Онсоку · Юзуха · Цезарь · Ляпис</small></div><span class="arrow">→</span>';}
     const builder=document.querySelector('.menu button[onclick="Builder.open()"]');
     if(builder){
       const encyclopedia=document.createElement('button');
@@ -64,9 +64,9 @@ const RTHub={selected:'araya',
     }
     const feature=document.querySelector('.menu .feature');
     if(feature){const t=feature.querySelector('p');
-      if(t)t.innerHTML='<strong>Четыре территории</strong><br>Морское bullet hell, токсичное выживание, ритм-лабиринт и скоростная погоня.';}
+      if(t)t.innerHTML='<strong>Семь территорий</strong><br>Морское bullet hell, токсичное выживание, ритм-лабиринт, погоня, воронка Юзухи, лабиринт Цезаря и магнитный бой Ляписа.';}
     const footer=document.querySelector('.footer span:last-child');
-    if(footer)footer.textContent=`${CHARS.length} БОЙЦОВ · ${ARENAS.length} АРЕН · 4 ТЕРРИТОРИИ РТ`;
+    if(footer)footer.textContent=`${CHARS.length} БОЙЦОВ · ${ARENAS.length} АРЕН · 7 ТЕРРИТОРИЙ РТ`;
   };
   App.rtSelect=()=>RTHub.open('araya');
   const help=App.help.bind(App);
